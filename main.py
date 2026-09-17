@@ -6,7 +6,7 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 schedules = {}
 json_path = Path(__file__).parent / "schedules"
@@ -18,10 +18,11 @@ def get_title(timeframe, period, seconds):
     hours = seconds // 3600
     minutes = (seconds // 60) % 60
     if hours > 0:
-        title += f"{seconds // 3600}h "
-    if minutes > 0 or hours > 0:
-        title += f"{(seconds // 60) % 60}m "
-    title += f"{seconds % 60}s"
+        title = f"{timeframe.upper()} ({period}): {seconds // 3600}h {(seconds // 60) % 60}m"
+    elif minutes > 0:
+        title = f"{timeframe.upper()} ({period}): {(seconds // 60) % 60}m {seconds % 60}s"
+    else:
+        title = f"{timeframe.upper()} ({period}): {seconds % 60}s"
     return title
 
 class ScheduleApp(rumps.App):
@@ -32,7 +33,7 @@ class ScheduleApp(rumps.App):
             quit_button=None
         )
 
-        self.options = list(schedules.keys())
+        self.options = sorted(list(schedules.keys()))
         self.sub_items = {
             opt: rumps.MenuItem(title=opt, callback=self.select_option)
             for opt in self.options
@@ -62,29 +63,38 @@ class ScheduleApp(rumps.App):
             month = now.month
             year = now.year
             found_period = False
-            for period_id, period in schedules["3-assembly"].items():
-                start_delta = round((datetime.strptime(f"{month}/{day}/{year} {period["start"]}", "%m/%d/%Y %I:%M%p") - now).total_seconds())
-                end_delta = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M%p") - now).total_seconds())
-                if start_delta > 0:
-                    self.title = get_title("start", period_id, start_delta)
+            for period_id, period in schedules[self.selected_schedule].items():
+                if datetime.now().hour > datetime.strptime(period["start"], "%I:%M %p").hour:
+                    tomorrow = datetime.today() + timedelta(days=1)
+                    day = tomorrow.day
+                    month = tomorrow.month
+                    year = tomorrow.year
+
+                time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {period["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+                time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+                if time_until_start > 0:
+                    self.title = get_title("start", period_id, time_until_start)
                     found_period = True
                     break
-                elif end_delta > 0:
+                elif time_until_end > 0:
                     found_period = True
-                    self.title = get_title("end", period_id, end_delta)
+                    self.title = get_title("end", period_id, time_until_end)
                     break
             if not found_period:
                 tomorrow = datetime.today() + timedelta(days=1)
                 day = tomorrow.day
                 month = tomorrow.month
                 year = tomorrow.year
-                start_delta = round((datetime.strptime(f"{month}/{day}/{year} {schedules["3-assembly"][list(schedules["3-assembly"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M%p") - now).total_seconds())
-                self.title = get_title("start", list(schedules[self.selected_schedule].keys())[0], start_delta)
+                time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {schedules[self.selected_schedule][list(schedules[self.selected_schedule].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+                self.title = get_title("start", list(schedules[self.selected_schedule].keys())[0], time_until_start)
             time.sleep(0.5)
 
     @rumps.clicked("About")
     def about(self, _):
-        rumps.alert(f"Menu Bar Schedule v{VERSION}\n\nAn easy way to see how much time is left until your next class!\n\nCreated by Aaron (GH: aaronwijes)")
+        rumps.alert(
+            title=f"Menu Bar Schedule",
+            message=f"An easy way to see how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/aaronwijes)"
+        )
 
     @rumps.clicked("Quit")
     def quit_app(self, _):
