@@ -1,42 +1,55 @@
 {
-  "1": {
-    "start": "8:00 AM",
-    "end": "8:40 AM"
-  },
-  "2": {
-    "start": "8:44 AM",
-    "end": "9:24 AM"
-  },
-  "3": {
-    "start": "9:28 AM",
-    "end": "10:14 AM"
-  },
-  "4": {
-    "start": "10:18 AM",
-    "end": "10:58 AM"
-  },
-  "5": {
-    "start": "11:02 AM",
-    "end": "11:42 AM"
-  },
-  "6": {
-    "start": "11:46 AM",
-    "end": "12:26 PM"
-  },
-  "7": {
-    "start": "12:30 PM",
-    "end": "1:10 PM"
-  },
-  "8": {
-    "start": "1:14 PM",
-    "end": "1:54 PM"
-  },
-  "9": {
-    "start": "1:58 PM",
-    "end": "2:38 PM"
-  },
-  "9F": {
-    "start": "2:38 PM",
-    "end": "2:47 PM"
+  "name": "Evacuation Drill (9F)",
+  "schedule": {
+    "1": {
+      "start": "8:00 AM",
+      "end": "8:40 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "8:44 AM",
+      "end": "9:24 AM",
+      "name": "Period 2"
+    },
+    "3": {
+      "start": "9:28 AM",
+      "end": "10:14 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "10:18 AM",
+      "end": "10:58 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "11:02 AM",
+      "end": "11:42 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "11:46 AM",
+      "end": "12:26 PM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "12:30 PM",
+      "end": "1:10 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "1:14 PM",
+      "end": "1:54 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "1:58 PM",
+      "end": "2:38 PM",
+      "name": "Period 9"
+    },
+    "9F": {
+      "start": "2:38 PM",
+      "end": "2:47 PM",
+      "name": "Period 9F"
+    }
   }
 }

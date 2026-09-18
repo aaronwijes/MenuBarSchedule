@@ -1,42 +1,55 @@
 {
-  "HR": {
-    "start": "8:00 AM",
-    "end": "8:56 AM"
-  },
-  "1": {
-    "start": "9:00 AM",
-    "end": "9:30 AM"
-  },
-  "2": {
-    "start": "9:34 AM",
-    "end": "10:04 AM"
-  },
-  "3": {
-    "start": "10:08 AM",
-    "end": "10:38 AM"
-  },
-  "4": {
-    "start": "10:42 AM",
-    "end": "11:12 AM"
-  },
-  "5": {
-    "start": "11:16 AM",
-    "end": "11:46 AM"
-  },
-  "6": {
-    "start": "11:50 AM",
-    "end": "12:20 PM"
-  },
-  "7": {
-    "start": "12:24 PM",
-    "end": "12:54 PM"
-  },
-  "8": {
-    "start": "12:58 PM",
-    "end": "1:28 PM"
-  },
-  "9": {
-    "start": "1:32 PM",
-    "end": "2:02 PM"
+  "name": "First Day of School",
+  "schedule": {
+    "HR": {
+      "start": "8:00 AM",
+      "end": "8:56 AM",
+      "name": "Homeroom"
+    },
+    "1": {
+      "start": "9:00 AM",
+      "end": "9:30 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "9:34 AM",
+      "end": "10:04 AM",
+      "name": "Period 2"
+    },
+    "3": {
+      "start": "10:08 AM",
+      "end": "10:38 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "10:42 AM",
+      "end": "11:12 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "11:16 AM",
+      "end": "11:46 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "11:50 AM",
+      "end": "12:20 PM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "12:24 PM",
+      "end": "12:54 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "12:58 PM",
+      "end": "1:28 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "1:32 PM",
+      "end": "2:02 PM",
+      "name": "Period 9"
+    }
   }
 }

@@ -1,38 +1,50 @@
 {
-  "1": {
-    "start": "8:00 AM",
-    "end": "8:41 AM"
-  },
-  "2": {
-    "start": "8:45 AM",
-    "end": "9:26 AM"
-  },
-  "3": {
-    "start": "9:30 AM",
-    "end": "10:17 AM"
-  },
-  "4": {
-    "start": "10:21 AM",
-    "end": "11:02 AM"
-  },
-  "5": {
-    "start": "11:06 AM",
-    "end": "11:47 AM"
-  },
-  "6": {
-    "start": "11:51 AM",
-    "end": "12:32 PM"
-  },
-  "7": {
-    "start": "12:36 PM",
-    "end": "1:17 PM"
-  },
-  "8": {
-    "start": "1:21 PM",
-    "end": "2:02 PM"
-  },
-  "9": {
-    "start": "2:06 PM",
-    "end": "2:47 PM"
+  "name": "Regular Bell Schedule",
+  "schedule": {
+    "1": {
+      "start": "8:00 AM",
+      "end": "8:41 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "8:45 AM",
+      "end": "9:26 AM",
+      "name": "Period 2"
+    },
+    "3": {
+      "start": "9:30 AM",
+      "end": "10:17 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "10:21 AM",
+      "end": "11:02 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "11:06 AM",
+      "end": "11:47 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "11:51 AM",
+      "end": "12:32 PM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "12:36 PM",
+      "end": "1:17 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "1:21 PM",
+      "end": "2:02 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "2:06 PM",
+      "end": "2:47 PM",
+      "name": "Period 9"
+    }
   }
 }

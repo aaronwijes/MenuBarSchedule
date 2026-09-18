@@ -1,42 +1,55 @@
 {
-  "1": {
-    "start": "8:00 AM",
-    "end": "8:31 AM"
-  },
-  "2": {
-    "start": "8:35 AM",
-    "end": "9:06 AM"
-  },
-  "3": {
-    "start": "9:10 AM",
-    "end": "9:44 AM"
-  },
-  "4": {
-    "start": "9:48 AM",
-    "end": "10:19 AM"
-  },
-  "5": {
-    "start": "10:23 AM",
-    "end": "10:54 AM"
-  },
-  "6": {
-    "start": "10:58 AM",
-    "end": "11:29 AM"
-  },
-  "7": {
-    "start": "11:33 AM",
-    "end": "12:04 PM"
-  },
-  "8": {
-    "start": "12:08 PM",
-    "end": "12:39 PM"
-  },
-  "9": {
-    "start": "12:43 PM",
-    "end": "1:14 PM"
-  },
-  "FD": {
-    "start": "1:17 PM",
-    "end": "2:47 PM"
+  "name": "Field Day",
+  "schedule": {
+    "1": {
+      "start": "8:00 AM",
+      "end": "8:31 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "8:35 AM",
+      "end": "9:06 AM",
+      "name": "Period 2"
+    },
+    "3": {
+      "start": "9:10 AM",
+      "end": "9:44 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "9:48 AM",
+      "end": "10:19 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "10:23 AM",
+      "end": "10:54 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "10:58 AM",
+      "end": "11:29 AM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "11:33 AM",
+      "end": "12:04 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "12:08 PM",
+      "end": "12:39 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "12:43 PM",
+      "end": "1:14 PM",
+      "name": "Period 9"
+    },
+    "FD": {
+      "start": "1:17 PM",
+      "end": "2:47 PM",
+      "name": "Field Day"
+    }
   }
 }

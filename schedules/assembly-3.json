@@ -1,38 +1,50 @@
 {
-  "1": {
-    "start": "8:00 AM",
-    "end": "8:38 AM"
-  },
-  "2": {
-    "start": "8:42 AM",
-    "end": "9:20 AM"
-  },
-  "3": {
-    "start": "9:24 AM",
-    "end": "10:32 AM"
-  },
-  "4": {
-    "start": "10:36 AM",
-    "end": "11:14 AM"
-  },
-  "5": {
-    "start": "11:18 AM",
-    "end": "11:56 AM"
-  },
-  "6": {
-    "start": "12:00 AM",
-    "end": "12:38 PM"
-  },
-  "7": {
-    "start": "12:42 PM",
-    "end": "1:20 PM"
-  },
-  "8": {
-    "start": "1:24 PM",
-    "end": "2:02 PM"
-  },
-  "9": {
-    "start": "2:06 PM",
-    "end": "2:47 PM"
+  "name": "Assembly (Period 3)",
+  "schedule": {
+    "1": {
+      "start": "8:00 AM",
+      "end": "8:38 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "8:42 AM",
+      "end": "9:20 AM",
+      "name": "Period 2"
+    },
+    "3": {
+      "start": "9:24 AM",
+      "end": "10:32 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "10:36 AM",
+      "end": "11:14 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "11:18 AM",
+      "end": "11:56 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "12:00 AM",
+      "end": "12:38 PM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "12:42 PM",
+      "end": "1:20 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "1:24 PM",
+      "end": "2:02 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "2:06 PM",
+      "end": "2:47 PM",
+      "name": "Period 9"
+    }
   }
 }
