@@ -5,7 +5,7 @@ import rumps
 from datetime import datetime, timedelta
 from pathlib import Path
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -63,9 +63,15 @@ class MenuBarSchedule(rumps.App):
                 day = tomorrow.day
                 month = tomorrow.month
                 year = tomorrow.year
-
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {period["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+
+            if datetime.now().hour > datetime.strptime(period["end"], "%I:%M %p").hour:
+                tomorrow = datetime.today() + timedelta(days=1)
+                day = tomorrow.day
+                month = tomorrow.month
+                year = tomorrow.year
             time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+
             if time_until_start > 0:
                 self.title = get_title("start", period_id, time_until_start)
                 found_period = True
