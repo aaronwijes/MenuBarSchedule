@@ -4,8 +4,9 @@ import time
 import rumps
 from datetime import datetime, timedelta
 from pathlib import Path
+from platformdirs import user_config_dir
 
-VERSION = "0.5.2"
+VERSION = "0.6.0"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -19,16 +20,34 @@ def get_title(timeframe, period, seconds):
         title = f"{timeframe.upper()} ({period}): {seconds % 60}s"
     return title
 
-class MenuBarSchedule(rumps.App):
+class Config():
     def __init__(self):
+        self.config_dir = Path(user_config_dir("MenuBarSchedule", "aaronwijes"))
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+        self.config_path = f"{self.config_dir}/config.json"
+
+        if not Path(self.config_path).exists():
+            self.config = {
+                "version": 1,
+                "selected_schedule": "default"
+            }
+        else:
+            self.config = json.loads(Path(self.config_path).read_text())
+
+    def save_config(self):
+        open(self.config_path, "w").write(json.dumps(self.config, indent=2))
+
+class MenuBarSchedule(rumps.App):
+    def __init__(self, config):
         super().__init__(
             name="Menu Bar Schedule",
             title=""
         )
+        self.config = config.config
+        self.config_handler = config
 
         self.sub_items = {}
         self.schedules = {}
-        self.selected_schedule = ""
 
         self.change_schedule = rumps.MenuItem(title="Change Schedule")
         self.change_schedule.add(rumps.MenuItem("Loading..."))
@@ -47,8 +66,9 @@ class MenuBarSchedule(rumps.App):
         self.timer.start()
 
     def select_option(self, sender):
-        self.sub_items[self.selected_schedule].state = False
-        self.selected_schedule = sender.title
+        self.sub_items[self.config["selected_schedule"]].state = False
+        self.config["selected_schedule"] = sender.title
+        self.config_handler.save_config()
         sender.state = True
 
     def update_time_left(self, _):
@@ -57,19 +77,8 @@ class MenuBarSchedule(rumps.App):
         month = now.month
         year = now.year
         found_period = False
-        for period_id, period in self.schedules[self.selected_schedule]["schedule"].items():
-            # if datetime.now().hour > datetime.strptime(period["start"], "%I:%M %p").hour:
-            #     tomorrow = datetime.today() + timedelta(days=1)
-            #     day = tomorrow.day
-            #     month = tomorrow.month
-            #     year = tomorrow.year
+        for period_id, period in self.schedules[self.config["selected_schedule"]]["schedule"].items():
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {period["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-
-            # if datetime.now().hour > datetime.strptime(period["end"], "%I:%M %p").hour:
-            #     tomorrow = datetime.today() + timedelta(days=1)
-            #     day = tomorrow.day
-            #     month = tomorrow.month
-            #     year = tomorrow.year
             time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
 
             if time_until_start > 0:
@@ -79,23 +88,24 @@ class MenuBarSchedule(rumps.App):
             elif time_until_end > 0:
                 found_period = True
                 self.title = get_title("end", period_id, time_until_end)
+                # rumps.notification(title=self.config["selected_schedule"], subtitle=f"{period["name"]} is almost ending!", message=f"{period["name"]} ends in {self.title}.")
                 break
         if not found_period:
             tomorrow = datetime.today() + timedelta(days=1)
             day = tomorrow.day
             month = tomorrow.month
             year = tomorrow.year
-            time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.selected_schedule]["schedule"][list(self.schedules[self.selected_schedule].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-            self.title = get_title("start", list(self.schedules[self.selected_schedule]["schedule"].keys())[0], time_until_start)
+            time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+            self.title = get_title("start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
         time.sleep(0.5)
 
     @rumps.clicked("View Schedule")
     def view_schedule(self, _):
         message = ""
-        for period in self.schedules[self.selected_schedule]["schedule"].values():
+        for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
             message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
         rumps.alert(
-            title=self.schedules[self.selected_schedule]["name"],
+            title=self.schedules[self.config["selected_schedule"]]["name"],
             message=message
         )
 
@@ -112,8 +122,8 @@ class MenuBarSchedule(rumps.App):
             opt: rumps.MenuItem(title=opt, callback=self.select_option)
             for opt in self.options
         }
-        self.selected_schedule = "Regular Bell Schedule"
-        self.sub_items[self.selected_schedule].state = True
+        # self.config["selected_schedule"] = "Regular Bell Schedule"
+        self.sub_items[self.config["selected_schedule"]].state = True
         
         self.change_schedule.clear()
         for item in self.sub_items.values():
@@ -128,4 +138,4 @@ class MenuBarSchedule(rumps.App):
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(__file__))
-    MenuBarSchedule().run()
+    MenuBarSchedule(Config()).run()
