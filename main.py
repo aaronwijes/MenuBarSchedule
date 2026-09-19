@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -81,16 +81,16 @@ class Updater():
             if releases is None:
                 return
 
-            if releases[0]["name"] == VERSION:
+            if releases[0]["tag_name"] == VERSION:
                 rumps.alert(
                     title="You're Up to Date",
-                    message="No updates were found."
+                    message=f"You're on the latest available version ({VERSION})."
                 )
                 return
 
             update = rumps.alert(
                 title="Update Available",
-                message=f"You can update to version {releases[0]["name"]}.\nInstall the update?",
+                message=f"You can update to version v{releases[0]["tag_name"]}.\nInstall the update?",
                 cancel=True
             )
             if not update:
@@ -170,7 +170,7 @@ class Updater():
                     else:
                         rumps.alert(
                             title="You're Up to Date",
-                            message="No schedule updates were found."
+                            message=f"You're on the latest available schedule version ({metadata_json["version"]})."
                         )
                         return
 
@@ -218,18 +218,24 @@ class MenuBarSchedule(rumps.App):
         self.menu = [
             self.change_schedule,
             self.change_schedule_pack,
-            "View Schedule",
             "Refresh Schedules",
+            "View Schedule",
             "About",
             rumps.separator,
+            "Check for App Updates",
             "Check for Schedule Updates",
-            "Check For Updates",
             rumps.separator
         ]
 
+        if self.config["check_app_updates_on_startup"]:
+            self.updater.update_app()
+        elif self.config["check_schedule_updates_on_startup"]:
+            self.updater.update_schedules()
         self.refresh_schedules(self.change_schedule)
 
         self.timer = rumps.Timer(self.update_time_left, 0.5)
+        self.auto_update_app_timer = rumps.Timer(self.updater.update_app, 60 * 60)
+        self.auto_update_schedule_timer = rumps.Timer(self.updater.update_schedules, 60 * 60)
         self.timer.start()
 
     def select_option_schedule(self, sender):
@@ -343,7 +349,7 @@ class MenuBarSchedule(rumps.App):
 
         self.config_handler.save_config()
 
-    @rumps.clicked("Check For Updates")
+    @rumps.clicked("Check for App Updates")
     def check_updates(self, _):
         self.updater.update_app()
 
