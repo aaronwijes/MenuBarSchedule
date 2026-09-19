@@ -38,7 +38,8 @@ if op in ["Darwin", "Windows"]:
         version = open("./resources/MenuBarSchedule.py", "r").read().split("VERSION = \"")[1].split("\"")[0]
         print(f"\nMenuBarSchedule Version: {version}")
         input("Press ENTER to start building MenuBarSchedule. ")
-        modifiedPLIST = open("./Resources/Info.plist", "r").read().replace("0.0.0", version)
+        modifiedSPEC = open("./Resources/MenuBarSchedule.spec", "r").read().replace("0.0.0", version)
+        open("MenuBarSchedule.spec", "w").write(modifiedSPEC)
 
         if op == "Darwin":
             os.system(f"pyinstaller --windowed ./resources/MenuBarSchedule.py --icon ./Resources/AppIcon.icns")
@@ -47,7 +48,6 @@ if op in ["Darwin", "Windows"]:
                 if delete != "AppIcon.icns":
                     os.system(f"rm -rf ./MenuBarSchedule.app/Contents/Resources/{delete}")
             os.system("rm -rf ./MenuBarSchedule.app/Contents/Frameworks/python3__dot__14")
-            open("./MenuBarSchedule.app/Contents/Info.plist", "w").write(modifiedPLIST)
             os.system("rm -rf build dist *.spec ./resources/MenuBarSchedule.py")
         else:
             os.system(f"pyinstaller {MenuBarSchedulePath} --icon ./Resources/AppIcon.ico")
