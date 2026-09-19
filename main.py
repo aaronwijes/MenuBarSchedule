@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -25,15 +25,6 @@ def get_title(timeframe, period, seconds):
         title = f"{timeframe.upper()} ({period}): {seconds % 60}s"
     return title
 
-def download_file(session, url):
-    try:
-        file_request = session.get(url)
-        if not file_request.ok:
-            raise requests.exceptions.ConnectionError
-        return file_request.content
-    except requests.exceptions.ConnectionError:
-        return False
-
 def get_releases(session):
     releases_req = session.get("https://api.github.com/repos/aaronwijes/MenuBarSchedule/releases")
     if not releases_req.ok:
@@ -44,6 +35,15 @@ def get_releases(session):
         return
     releases = releases_req.json()
     return releases
+
+def download_file(session, url):
+    try:
+        file_request = session.get(url)
+        if not file_request.ok:
+            raise requests.exceptions.ConnectionError
+        return file_request.content
+    except requests.exceptions.ConnectionError:
+        return False
 
 class Config():
     def __init__(self):
@@ -126,6 +126,32 @@ class Updater():
                 message="An unexpected error occured!"
             )
 
+    def install_schedules_core(self, session, releases):
+        for asset in releases[0]["assets"]:
+            if "schedules-" in asset["name"]:
+                schedules_zip = download_file(session, asset["browser_download_url"])
+                open(asset["name"], "wb").write(schedules_zip)
+                if os.path.exists("./schedules/"):
+                    shutil.rmtree("./schedules/")
+                try:
+                    with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
+                        zip_ref.extractall(".")
+                    subprocess.run(["rm", "-rf", asset["name"]])
+                    rumps.alert(
+                        title="Update Successful",
+                        message="Successfully updated schedules."
+                    )
+                    return True
+                except:
+                    subprocess.run(["rm", "-rf", "schedules"])
+                    subprocess.run(["rm", "-rf", asset["name"]])
+                    rumps.alert(
+                        title="Update Failed",
+                        message="Failed to update schedules."
+                    )
+                    return False
+        return False
+
     def update_schedules(self):
         try:
             session = requests.Session()
@@ -149,28 +175,7 @@ class Updater():
                         )
                         return
 
-            for asset in releases[0]["assets"]:
-                if "schedules-" in asset["name"]:
-                    schedules_zip = download_file(session, asset["browser_download_url"])
-                    open(asset["name"], "wb").write(schedules_zip)
-                    if os.path.exists("./schedules/"):
-                        shutil.rmtree("./schedules/")
-                    try:
-                        with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
-                            zip_ref.extractall(".")
-                        subprocess.run(["rm", "-rf", asset["name"]])
-                        rumps.alert(
-                            title="Update Successful",
-                            message="Successfully updated schedules."
-                        )
-                    except:
-                        subprocess.run(["rm", "-rf", "schedules"])
-                        subprocess.run(["rm", "-rf", asset["name"]])
-                        rumps.alert(
-                            title="Update Failed",
-                            message="Failed to update schedules."
-                        )
-                        return
+            self.install_schedules_core(session, releases)
         except requests.exceptions.ConnectionError:
             rumps.alert(
                 title="Connection Error",
@@ -187,33 +192,10 @@ class Updater():
             sys.exit()
 
         session = requests.Session()
-        releases_req = session.get("https://api.github.com/repos/aaronwijes/MenuBarSchedule/releases")
-        if not releases_req.ok:
-            rumps.alert(
-                title="Connection Error",
-                message="Couldn't connect to GitHub Releases."
-            )
-            exit()
-        releases = releases_req.json()
+        releases = get_releases(session)
 
-        for asset in releases[0]["assets"]:
-            if "schedules-" in asset["name"]:
-                schedules_zip = download_file(session, asset["browser_download_url"])
-                open(asset["name"], "wb").write(schedules_zip)
-                if os.path.exists("./schedules/"):
-                    shutil.rmtree("./schedules/")
-                try:
-                    with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
-                        zip_ref.extractall(".")
-                    subprocess.run(["rm", "-rf", asset["name"]])
-                except:
-                    subprocess.run(["rm", "-rf", "schedules"])
-                    subprocess.run(["rm", "-rf", asset["name"]])
-                    rumps.alert(
-                        title="Install Failed",
-                        message="Failed to install schedules."
-                    )
-                    exit()
+        if not self.install_schedules_core(session, releases):
+            exit()
 
 class MenuBarSchedule(rumps.App):
     def __init__(self, config, updater):
