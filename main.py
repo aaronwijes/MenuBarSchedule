@@ -2,11 +2,15 @@ import os
 import json
 import time
 import rumps
+import requests
+import shutil
+import subprocess
+import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -20,6 +24,15 @@ def get_title(timeframe, period, seconds):
         title = f"{timeframe.upper()} ({period}): {seconds % 60}s"
     return title
 
+def download_file(session, url):
+    try:
+        file_request = session.get(url)
+        if not file_request.ok:
+            raise requests.exceptions.ConnectionError
+        return file_request.content
+    except requests.exceptions.ConnectionError:
+        return False
+
 class Config():
     def __init__(self):
         self.config_dir = Path(user_config_dir("MenuBarSchedule", "aaronwijes"))
@@ -28,8 +41,8 @@ class Config():
 
         if not Path(self.config_path).exists():
             self.config = {
-                "version": 1,
-                "selected_schedule": "default"
+                "version": VERSION,
+                "selected_schedule": "Regular Bell Schedule"
             }
         else:
             self.config = json.loads(Path(self.config_path).read_text())
@@ -57,6 +70,8 @@ class MenuBarSchedule(rumps.App):
             "View Schedule",
             "Refresh Schedules",
             "About",
+            rumps.separator,
+            "Check For Updates",
             rumps.separator
         ]
 
@@ -122,12 +137,53 @@ class MenuBarSchedule(rumps.App):
             opt: rumps.MenuItem(title=opt, callback=self.select_option)
             for opt in self.options
         }
-        # self.config["selected_schedule"] = "Regular Bell Schedule"
         self.sub_items[self.config["selected_schedule"]].state = True
         
         self.change_schedule.clear()
         for item in self.sub_items.values():
             self.change_schedule.add(item)
+
+        self.config_handler.save_config()
+
+    @rumps.clicked("Check For Updates")
+    def check_updates(self, _):
+        try:
+            session = requests.Session()
+
+            releases_req = session.get("https://api.github.com/repos/AaronWijesinghe/MenuBarSchedule/releases")
+            if not releases_req.ok:
+                rumps.alert(
+                    title="MenuBarSchedule",
+                    message="Couldn't connect to GitHub Releases."
+                )
+                return
+            releases = releases_req.json()
+            if releases[0]["name"] == VERSION:
+                rumps.alert(
+                    title="MenuBarSchedule",
+                    message="No updates were found."
+                )
+                return
+
+            for asset in releases[0]["assets"]:
+                if "MenuBarSchedule.app.zip" == asset["name"]:
+                    app_darwin = download_file(session, asset["browser_download_url"])
+                    open("MenuBarSchedule.app.zip", "wb").write(app_darwin)
+                    if os.path.exists("/Applications/MenuBarSchedule.app"):
+                        shutil.rmtree("/Applications/MenuBarSchedule.app")
+                    try:
+                        with zipfile.ZipFile("MenuBarSchedule.app.zip", 'r') as zip_ref:
+                            zip_ref.extractall("/Applications/")
+                    except:
+                        subprocess.run(["rm", "-rf", "/Applications/MenuBarSchedule.app"])
+                        subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
+                        rumps.alert(
+                            title="MenuBarSchedule",
+                            message="Failed to install the update."
+                        )
+                        return
+        except requests.exceptions.ConnectionError:
+            return False
 
     @rumps.clicked("About")
     def about(self, _):

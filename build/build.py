@@ -17,36 +17,38 @@ if op in ["Darwin", "Windows"]:
         clear()
         print(f"{gold}[Build MenuBarSchedule]{end}")
         print(f"{bold}Here are the minimum requirements to build MenuBarSchedule:{end}")
-        print("    - 200MB+ space (app ~55MB, launcher ~2MB, rest is temporary files)")
+        print("    - 100MB+ space (app ~50MB, rest is temporary files)")
         print("    - The modules in requirements.txt")
         print("    - MenuBarSchedule.py in the (parent) directory of the build script")
         print("    - AppIcon(.icns/.ico), launcher.py, and Info.plist in ./Resources/")
-        print("    - Any version of MenuBarSchedule (MacOS) or MenuBarSchedule v1.0.0+ (Windows)")
+        print("    - Any version of MenuBarSchedule (MacOS, Windows is not supported for now)")
         print(f"\n{bold}If you're running Option 1 for a complete install:{end}")
-        print("    - ./assets/ with docs.txt, changelog.txt, and donations.json in the (parent) directory of the build script")
+        print("    - ./schedules/ with any schedule JSON files you want to include")
 
-        if os.path.exists("../MenuBarSchedule.py"):
-            MenuBarSchedulePath = "../MenuBarSchedule.py"
-        elif os.path.exists("./MenuBarSchedule.py"):
-            MenuBarSchedulePath = "./MenuBarSchedule.py"
+        if os.path.exists("../main.py"):
+            MenuBarSchedulePath = "../main.py"
+        elif os.path.exists("./main.py"):
+            MenuBarSchedulePath = "./main.py"
         else:
-            input("MenuBarSchedule.py wasn't found. ")
+            input("main.py wasn't found. ")
             return
 
-        version = open(MenuBarSchedulePath, "r").read().split("VERSION = \"")[1].split("\"")[0]
+        shutil.copy(MenuBarSchedulePath, "./resources/MenuBarSchedule.py")
+
+        version = open("./resources/MenuBarSchedule.py", "r").read().split("VERSION = \"")[1].split("\"")[0]
         print(f"\nMenuBarSchedule Version: {version}")
         input("Press ENTER to start building MenuBarSchedule. ")
         modifiedPLIST = open("./Resources/Info.plist", "r").read().replace("0.0.0", version)
 
         if op == "Darwin":
-            os.system(f"pyinstaller --windowed {MenuBarSchedulePath} --icon ./Resources/AppIcon.icns")
+            os.system(f"pyinstaller --windowed ./resources/MenuBarSchedule.py --icon ./Resources/AppIcon.icns")
             os.system("cp -r ./dist/MenuBarSchedule.app .")
             for delete in os.listdir("./MenuBarSchedule.app/Contents/Resources/"):
                 if delete != "AppIcon.icns":
                     os.system(f"rm -rf ./MenuBarSchedule.app/Contents/Resources/{delete}")
             os.system("rm -rf ./MenuBarSchedule.app/Contents/Frameworks/python3__dot__14")
             open("./MenuBarSchedule.app/Contents/Info.plist", "w").write(modifiedPLIST)
-            os.system("rm -rf build dist *.spec")
+            os.system("rm -rf build dist *.spec ./resources/MenuBarSchedule.py")
         else:
             os.system(f"pyinstaller {MenuBarSchedulePath} --icon ./Resources/AppIcon.ico")
             os.system("xcopy .\\dist\\MenuBarSchedule . /E /Q")

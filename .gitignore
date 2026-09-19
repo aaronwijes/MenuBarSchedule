@@ -1,6 +1,7 @@
 *.venv
 *__pycache__
 *.DS_Store
-*.icns
+*.iconset
+*.code-workspace
 menubarschedule.py
 build_release.py
