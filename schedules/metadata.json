@@ -1,6 +1,10 @@
 {
-    "version": 1,
+    "version": 2,
     "packs": [
-        "siths"
+        {
+            "id": "siths",
+            "name": "Staten Island Technical High School",
+            "version": 1
+        }
     ]
 }

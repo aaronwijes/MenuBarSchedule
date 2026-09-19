@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.8.2"
+VERSION = "0.9.0"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -212,8 +212,12 @@ class MenuBarSchedule(rumps.App):
         self.change_schedule = rumps.MenuItem(title="Change Schedule")
         self.change_schedule.add(rumps.MenuItem("Loading..."))
 
+        self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
+        self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
+
         self.menu = [
             self.change_schedule,
+            self.change_schedule_pack,
             "View Schedule",
             "Refresh Schedules",
             "About",
@@ -228,12 +232,22 @@ class MenuBarSchedule(rumps.App):
         self.timer = rumps.Timer(self.update_time_left, 0.5)
         self.timer.start()
 
-    def select_option(self, sender):
+    def select_option_schedule(self, sender):
         if self.config["selected_schedule"] != "":
             self.sub_items[self.config["selected_schedule"]].state = False
         self.config["selected_schedule"] = sender.title
         self.config_handler.save_config()
         sender.state = True
+
+    def select_option_pack(self, sender):
+        if sender.title not in self.config["enabled_packs"]:
+            self.config["enabled_packs"].append(sender.title)
+            # sender.state = True
+        else:
+            self.config["enabled_packs"].remove(sender.title)
+            # sender.state = False
+        self.config_handler.save_config()
+        self.refresh_schedules(None)
 
     def update_time_left(self, _):
         now = datetime.now()
@@ -289,20 +303,32 @@ class MenuBarSchedule(rumps.App):
         metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
         metadata_json = json.loads(metadata.read_text())
         for pack in metadata_json["packs"]:
-            if pack in self.config["enabled_packs"]:
-                schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack / "json"
+            if pack["name"] in self.config["enabled_packs"]:
+                schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"]
                 for schedule_json in schedule_path.glob("*.json"):
                     schedule = json.loads((schedule_json.read_text()))
                     self.schedules[schedule["name"]] = schedule
 
-        self.options = sorted([schedule["name"] for schedule in self.schedules.values()])
-        if self.options != []:
+        self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
+        self.pack_options = [pack for pack in metadata_json["packs"]]
+        if self.pack_options != []:
             self.sub_items = {
-                opt: rumps.MenuItem(title=opt, callback=self.select_option)
-                for opt in self.options
+                opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
+                for opt in self.pack_options
+            }
+            self.change_schedule_pack.clear()
+            for item in self.sub_items.values():
+                if item.title in self.config["enabled_packs"]:
+                    item.state = True
+                self.change_schedule_pack.add(item)
+
+        if self.schedule_options != []:
+            self.sub_items = {
+                opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule)
+                for opt in self.schedule_options
             }
 
-            if self.config["selected_schedule"] not in self.options:
+            if self.config["selected_schedule"] not in self.schedule_options:
                 self.config["selected_schedule"] = ""
             if self.config["selected_schedule"] != "":
                 self.sub_items[self.config["selected_schedule"]].state = True
