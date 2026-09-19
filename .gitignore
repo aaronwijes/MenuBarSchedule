@@ -4,5 +4,5 @@
 *.iconset
 *.code-workspace
 *.app
+artifacts/
 menubarschedule.py
-build_release.py

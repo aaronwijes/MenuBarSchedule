@@ -8,11 +8,10 @@ bold = "\033[1m"
 faint = "\033[2m"
 end = "\033[0m"
 
-op = platform.system()
 def clear():
-    os.system("clear;clear" if op == "Darwin" else "cls")
+    print("\033[2J\033[3J\033[H", end='')
 
-if op in ["Darwin", "Windows"]:
+if platform.system() == "Darwin":
     def build():
         clear()
         print(f"{gold}[Build MenuBarSchedule]{end}")
@@ -21,7 +20,7 @@ if op in ["Darwin", "Windows"]:
         print("    - The modules in requirements.txt")
         print("    - MenuBarSchedule.py in the (parent) directory of the build script")
         print("    - AppIcon(.icns/.ico), launcher.py, and Info.plist in ./Resources/")
-        print("    - Any version of MenuBarSchedule (MacOS, Windows is not supported for now)")
+        print("    - Any version of MenuBarSchedule")
         print(f"\n{bold}If you're running Option 1 for a complete install:{end}")
         print("    - ./schedules/ with any schedule JSON files you want to include")
 
@@ -41,20 +40,13 @@ if op in ["Darwin", "Windows"]:
         modifiedSPEC = open("./Resources/MenuBarSchedule.spec", "r").read().replace("0.0.0", version)
         open("MenuBarSchedule.spec", "w").write(modifiedSPEC)
 
-        if op == "Darwin":
-            os.system(f"pyinstaller --windowed ./resources/MenuBarSchedule.py --icon ./Resources/AppIcon.icns")
-            os.system("cp -r ./dist/MenuBarSchedule.app .")
-            for delete in os.listdir("./MenuBarSchedule.app/Contents/Resources/"):
-                if delete != "AppIcon.icns":
-                    os.system(f"rm -rf ./MenuBarSchedule.app/Contents/Resources/{delete}")
-            os.system("rm -rf ./MenuBarSchedule.app/Contents/Frameworks/python3__dot__14")
-            os.system("rm -rf build dist *.spec ./resources/MenuBarSchedule.py")
-        else:
-            os.system(f"pyinstaller {MenuBarSchedulePath} --icon ./Resources/AppIcon.ico")
-            os.system("xcopy .\\dist\\MenuBarSchedule . /E /Q")
-            shutil.rmtree("./build/")
-            shutil.rmtree("./dist/")
-            os.system("erase *.spec /Q")
+        os.system(f"pyinstaller --windowed ./resources/MenuBarSchedule.py --icon ./Resources/AppIcon.icns")
+        os.system("cp -r ./dist/MenuBarSchedule.app .")
+        for delete in os.listdir("./MenuBarSchedule.app/Contents/Resources/"):
+            if delete != "AppIcon.icns":
+                os.system(f"rm -rf ./MenuBarSchedule.app/Contents/Resources/{delete}")
+        os.system("rm -rf ./MenuBarSchedule.app/Contents/Frameworks/python3__dot__14")
+        os.system("rm -rf build dist *.spec ./resources/MenuBarSchedule.py")
 
     def transfer_assets(output=True):
         clear()
@@ -74,13 +66,8 @@ if op in ["Darwin", "Windows"]:
         if output:
             print(f"The asset directory was found at {path}.")
 
-        if op == "Windows":
-            if not os.path.exists("./_internal/schedules/"):
-                os.mkdir("./_internal/schedules/")
-
-        executable = "copy /Y" if op == "Windows" else "cp -r"
-        dest = ".\\_internal\\schedules" if op == "Windows" else "MenuBarSchedule.app/Contents/Frameworks/schedules"
-        path = path if op == "Darwin" else path.replace("/", "\\")
+        executable = "cp -r"
+        dest = "MenuBarSchedule.app/Contents/Frameworks/schedules"
         os.system(f"{executable} {path} {dest}")
 
         if output:
@@ -107,25 +94,24 @@ if op in ["Darwin", "Windows"]:
         clear()
         os.chdir(os.path.dirname(__file__))
 
-        app_location = "_internal" if op == "Windows" else "MenuBarSchedule.app"
+        app_location = "MenuBarSchedule.app"
         app_exists = "" if os.path.exists(app_location) else faint
         app_exists_a = "" if os.path.exists("/Applications/MenuBarSchedule.app") else faint
 
         args = sys.argv[1:]
         if len(args) == 0:
             print(f"{gold}[MenuBarSchedule Build Tool]{end}")
-            print(f"{bold}[1] Install MenuBarSchedule from source (Options 2{", 3, and 4" if op == "Darwin" else " and 3"} combined){end}")
+            print(f"{bold}[1] Install MenuBarSchedule from source (Options 2, 3, and 4 combined){end}")
             print("[2] Build MenuBarSchedule")
             print(f"{app_exists}[3] Inject the asset directory into MenuBarSchedule{end}")
-            if op == "Darwin":
-                print(f"{app_exists}[4] Transfer MenuBarSchedule to /Applications (macOS Only){end}")
-                print(f"{app_exists_a}[5] Delete MenuBarSchedule from /Applications (macOS Only){end}")
-            print(f"[{"4" if op == "Windows" else "6"}] Exit")
+            print(f"{app_exists}[4] Transfer MenuBarSchedule to /Applications{end}")
+            print(f"{app_exists_a}[5] Delete MenuBarSchedule from /Applications{end}")
+            print(f"[6] Exit")
             option = input("\nSelect an option: ").strip()
         else:
             option = args[-1].strip()
 
-        if not option.isnumeric() or not option in ["1", "2", "3", "4", "5" if op == "Darwin" else "1", "6" if op == "Darwin" else "1"]:
+        if not option.isnumeric() or not option in ["1", "2", "3", "4", "5", "6"]:
             input("Invalid option. ")
         else:
             option = int(option)
@@ -134,20 +120,17 @@ if op in ["Darwin", "Windows"]:
             case 1:
                 build()
                 transfer_assets(output=False)
-                if op == "Darwin":
-                    transfer_to_applications(output=False)
+                transfer_to_applications(output=False)
             case 2:
                 build()
             case 3:
                 if os.path.exists(app_location):
                     transfer_assets()
             case 4:
-                if os.path.exists(app_location) and op == "Darwin":
+                if os.path.exists(app_location):
                     transfer_to_applications()
-                elif op == "Windows":
-                    exit()
             case 5:
-                if os.path.exists("/Applications/MenuBarSchedule.app") and op == "Darwin":
+                if os.path.exists("/Applications/MenuBarSchedule.app"):
                     delete_from_applications()
             case 6:
                 exit()
@@ -156,4 +139,4 @@ if op in ["Darwin", "Windows"]:
             exit()
 else:
     clear()
-    input("The build script is not available for Linux at this time. ")
+    input("The build script is only available for macOS. ")
