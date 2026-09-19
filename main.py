@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.7.3"
+VERSION = "0.7.4"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -51,6 +51,9 @@ class Config():
             }
         else:
             self.config = json.loads(Path(self.config_path).read_text())
+            # run migration code here
+            self.config["version"] = VERSION
+            self.save_config()
 
     def save_config(self):
         open(self.config_path, "w").write(json.dumps(self.config, indent=2))
