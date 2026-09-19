@@ -46,7 +46,7 @@ def build():
     modifiedSPEC = open("./Resources/MenuBarSchedule.spec", "r").read().replace("0.0.0", version)
     open("MenuBarSchedule.spec", "w").write(modifiedSPEC)
 
-    os.system(f"pyinstaller --windowed ./resources/MenuBarSchedule.py --icon ./Resources/AppIcon.icns")
+    os.system(f"pyinstaller MenuBarSchedule.spec")
     os.system("cp -r ./dist/MenuBarSchedule.app .")
     for delete in os.listdir("./MenuBarSchedule.app/Contents/Resources/"):
         if delete != "AppIcon.icns":

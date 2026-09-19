@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.8.1"
+VERSION = "0.8.2"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -33,8 +33,7 @@ def get_releases(session):
             message="Couldn't connect to GitHub Releases."
         )
         return
-    releases = releases_req.json()
-    return releases
+    return releases_req.json()
 
 def download_file(session, url):
     try:
@@ -303,6 +302,8 @@ class MenuBarSchedule(rumps.App):
                 for opt in self.options
             }
 
+            if self.config["selected_schedule"] not in self.options:
+                self.config["selected_schedule"] = ""
             if self.config["selected_schedule"] != "":
                 self.sub_items[self.config["selected_schedule"]].state = True
 
@@ -310,6 +311,8 @@ class MenuBarSchedule(rumps.App):
             for item in self.sub_items.values():
                 self.change_schedule.add(item)
         else:
+            self.change_schedule.clear()
+            self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
             self.config["selected_schedule"] = ""
 
         self.config_handler.save_config()
