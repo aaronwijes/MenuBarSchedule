@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -42,7 +42,8 @@ class Config():
         if not Path(self.config_path).exists():
             self.config = {
                 "version": VERSION,
-                "selected_schedule": "Regular Bell Schedule"
+                "selected_schedule": "Regular Bell Schedule",
+                "show_almost_end_notifs": False
             }
         else:
             self.config = json.loads(Path(self.config_path).read_text())
@@ -154,7 +155,7 @@ class MenuBarSchedule(rumps.App):
             releases_req = session.get("https://api.github.com/repos/aaronwijes/MenuBarSchedule/releases")
             if not releases_req.ok:
                 rumps.alert(
-                    title="Menu Bar Schedule",
+                    title="Connection Error",
                     message="Couldn't connect to GitHub Releases."
                 )
                 os.chdir(os.path.dirname(__file__))
@@ -162,15 +163,15 @@ class MenuBarSchedule(rumps.App):
             releases = releases_req.json()
             if releases[0]["name"] == VERSION:
                 rumps.alert(
-                    title="Menu Bar Schedule",
+                    title="You're Up to Date",
                     message="No updates were found."
                 )
                 os.chdir(os.path.dirname(__file__))
                 return
 
             update = rumps.alert(
-                title="Menu Bar Schedule",
-                message="An update was found. Install the update?",
+                title="Update Available",
+                message=f"You can update to version {releases[0]["name"]}.\nInstall the update?",
                 cancel=True
             )
             if not update:
@@ -189,26 +190,29 @@ class MenuBarSchedule(rumps.App):
                         subprocess.run(["xattr", "-dr", "com.apple.quarantine", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
                         rumps.alert(
-                            title="Menu Bar Schedule",
-                            message="Successfully installed the update!\nRelaunch Menu Bar Schedule to finish the update."
+                            title="Update Successful",
+                            message="Successfully installed the update!\nRestart Menu Bar Schedule to finish the update."
                         )
                     except:
                         subprocess.run(["rm", "-rf", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
                         rumps.alert(
-                            title="Menu Bar Schedule",
+                            title="Update Failed",
                             message="Failed to install the update."
                         )
                         os.chdir(os.path.dirname(__file__))
         except requests.exceptions.ConnectionError:
             os.chdir(os.path.dirname(__file__))
-            return
+            rumps.alert(
+                title="Connection Error",
+                message="An unexpected error occured!"
+            )
 
     @rumps.clicked("About")
     def about(self, _):
         rumps.alert(
-            title=f"Menu Bar Schedule",
-            message=f"An easy way to see how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/aaronwijes)"
+            title=f"About",
+            message=f"Menu Bar Schedule shows how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/aaronwijes)"
         )
 
 if __name__ == "__main__":
