@@ -6,14 +6,14 @@
 
 Menu Bar Schedule tells you how long you have until your next class.
 
-## Current Features:
+## Current Features
 * See how much time is left until your next class/event
 * Select between 10+ schedule variants
 * See your schedule in detail
 
-## Upcoming Features:
+## Upcoming Features
 * Schedule updates without updating the entire app
 * Auto-update for the app and schedules
 
-## How do I build this from source?
+## Building From Source
 There is a build script at `./build/build.py` that can be used to build the app.
