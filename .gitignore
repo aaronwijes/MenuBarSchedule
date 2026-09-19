@@ -3,5 +3,6 @@
 *.DS_Store
 *.iconset
 *.code-workspace
+*.app
 menubarschedule.py
 build_release.py

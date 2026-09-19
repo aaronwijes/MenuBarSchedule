@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.7.2"
+VERSION = "0.7.3"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -43,7 +43,11 @@ class Config():
             self.config = {
                 "version": VERSION,
                 "selected_schedule": "Regular Bell Schedule",
-                "show_almost_end_notifs": False
+                "show_almost_end_notifs": False,
+                "app_auto_update_frequency": None,
+                "schedule_auto_update_frequency": None,
+                "check_app_updates_on_startup": False,
+                "check_schedule_updates_on_startup": False
             }
         else:
             self.config = json.loads(Path(self.config_path).read_text())
