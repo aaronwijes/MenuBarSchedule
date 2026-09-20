@@ -1,4 +1,4 @@
-rumps
-pyinstaller
-platformdirs
-requests
+rumps==0.4.0
+pyinstaller==6.22.3
+platformdirs==4.11.10
+requests==2.34.2
