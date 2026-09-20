@@ -16,8 +16,8 @@ Menu Bar Schedule shows how much time you have until your next class starts/ends
 ## Current Features
 * See how much time is left until your next class/event
 * Select between 10+ schedule variants
-* See your schedule in detail
-* Schedule updates without updating the entire app
+* See your schedule timetable in detail
+* Install schedule updates without updating the entire app
 * Check for updates on app startup
 
 ## Building From Source
