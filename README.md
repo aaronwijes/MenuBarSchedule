@@ -16,7 +16,7 @@ Menu Bar Schedule shows how much time you have until your next class starts/ends
 * Check for updates on app startup
 
 ## Building From Source
-There is a build script at `build.py` that can be used to build the app.<br>
+There is a build script at `build.py` which can be used to build the app.<br>
 Make sure you have installed all of the modules in `requirements.txt` and have ~100MB of free space.
 
 To test your own schedule packs, make your changes and move the `/schedules` directory to `/Users/USERNAME/Library/Application Support/MenuBarSchedule/schedules`.
