@@ -1,10 +1,17 @@
-# Menu Bar Schedule
+# <img width="32" height="32" alt="icon_32x32" src="https://github.com/user-attachments/assets/d95dcabc-404c-4586-b13d-3e6504c3f477" /> Menu Bar Schedule
 
 ![GitHub Release](https://img.shields.io/github/v/release/aaronwijes/MenuBarSchedule)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/aaronwijes/MenuBarSchedule)
 ![GitHub License](https://img.shields.io/github/license/aaronwijes/MenuBarSchedule)
 
-Menu Bar Schedule tells you how long you have until your next class.
+Menu Bar Schedule tells you how long you have until your next class starts/ends.
+
+## Images
+<img width="248" height="252" alt="image" src="https://github.com/user-attachments/assets/d38ecd1c-204c-45cc-bad9-8bcff6545a08" />
+*The current UI, as of 0.10.1*
+
+<img width="135" height="29" alt="image" src="https://github.com/user-attachments/assets/8b88f55d-f1df-4b48-a4e0-2677879b405d" />
+*The text you will see in the menu bar*
 
 ## Current Features
 * See how much time is left until your next class/event
