@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import rumps
 import requests
 import shutil
@@ -11,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -159,7 +158,7 @@ class Updater():
                 if "schedules-" in asset["name"]:
                     metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
                     metadata_json = json.loads(metadata.read_text())
-                    if f"schedules-v{metadata_json["version"]}.zip" != asset["name"]:
+                    if f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] == VERSION:
                         update = rumps.alert(
                             title="Schedule Updates Available",
                             message=f"A schedule update was found.\nInstall the update?",
@@ -167,6 +166,12 @@ class Updater():
                         )
                         if not update:
                             return
+                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION:
+                        rumps.alert(
+                            title="Cannot Update Schedules",
+                            message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
+                        )
+                        return
                     else:
                         if show_alerts:
                             rumps.alert(
@@ -194,8 +199,8 @@ class Updater():
         session = requests.Session()
         releases = get_releases(session)
 
-        if not self.install_schedules_core(session, releases):
-            exit()
+        if not self.install_schedules_core(session, releases, False):
+            sys.exit()
 
 class MenuBarSchedule(rumps.App):
     def __init__(self, config, updater):
@@ -239,7 +244,7 @@ class MenuBarSchedule(rumps.App):
         ]
 
         self.refresh_schedules(self.change_schedule)
-        self.timer = rumps.Timer(self.update_time_left, 0.5)
+        self.timer = rumps.Timer(self.update_time_left, 0.1)
         self.timer.start()
 
         if self.config["check_app_updates_on_startup"]:
@@ -257,10 +262,8 @@ class MenuBarSchedule(rumps.App):
     def select_option_pack(self, sender):
         if sender.title not in self.config["enabled_packs"]:
             self.config["enabled_packs"].append(sender.title)
-            # sender.state = True
         else:
             self.config["enabled_packs"].remove(sender.title)
-            # sender.state = False
         self.config_handler.save_config()
         self.refresh_schedules(None)
 
@@ -311,17 +314,22 @@ class MenuBarSchedule(rumps.App):
             year = tomorrow.year
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
             self.title = get_title("start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
-        time.sleep(0.5)
 
     @rumps.clicked("View Schedule")
     def view_schedule(self, _):
-        message = ""
-        for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
-            message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
-        rumps.alert(
-            title=self.schedules[self.config["selected_schedule"]]["name"],
-            message=message
-        )
+        if self.config["selected_schedule"] != "":
+            message = ""
+            for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
+                message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
+            rumps.alert(
+                title=self.schedules[self.config["selected_schedule"]]["name"],
+                message=message
+            )
+        else:
+            rumps.alert(
+                title="No Schedule Selected",
+                message="No schedule is currently selected.\nSelect a schedule to view its timetable!"
+            )
 
     @rumps.clicked("Refresh Schedules")
     def refresh_schedules(self, _):
