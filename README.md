@@ -7,7 +7,7 @@
 Menu Bar Schedule tells you how long you have until your next class starts/ends.
 
 ## Images
-<img width="248" height="252" alt="image" src="https://github.com/user-attachments/assets/d38ecd1c-204c-45cc-bad9-8bcff6545a08" /><br>
+<img width="394" height="398" alt="image" src="https://github.com/user-attachments/assets/dfa6eb8a-8f4c-4805-901f-f68e0edbd09a" /><br>
 *The current UI, as of 0.10.1*<br>
 
 <img width="135" height="29" alt="image" src="https://github.com/user-attachments/assets/8b88f55d-f1df-4b48-a4e0-2677879b405d" /><br>
