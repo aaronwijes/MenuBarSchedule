@@ -4,7 +4,7 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/aaronwijes/MenuBarSchedule)
 ![GitHub License](https://img.shields.io/github/license/aaronwijes/MenuBarSchedule)
 
-Menu Bar Schedule tells you how long you have until your next class starts/ends.
+Menu Bar Schedule shows how much time you have until your next class starts/ends.
 
 ## Images
 <img width="394" height="398" alt="image" src="https://github.com/user-attachments/assets/dfa6eb8a-8f4c-4805-901f-f68e0edbd09a" /><br>
