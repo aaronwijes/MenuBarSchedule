@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.9.1"
+VERSION = "0.10.0"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -55,8 +55,6 @@ class Config():
                 "version": VERSION,
                 "selected_schedule": "",
                 "show_almost_end_notifs": False,
-                "app_auto_update_frequency": None,
-                "schedule_auto_update_frequency": None,
                 "check_app_updates_on_startup": False,
                 "check_schedule_updates_on_startup": False,
                 "enabled_packs": ["siths"]
@@ -74,7 +72,7 @@ class Updater():
     def __init__(self, config):
         self.config_handler = config
 
-    def update_app(self):
+    def update_app(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -82,10 +80,11 @@ class Updater():
                 return
 
             if releases[0]["tag_name"] == VERSION:
-                rumps.alert(
-                    title="You're Up to Date",
-                    message=f"You're on the latest available version ({VERSION})."
-                )
+                if show_alerts:
+                    rumps.alert(
+                        title="You're Up to Date",
+                        message=f"You're on the latest available version ({VERSION})."
+                    )
                 return
 
             update = rumps.alert(
@@ -125,7 +124,7 @@ class Updater():
                 message="An unexpected error occured!"
             )
 
-    def install_schedules_core(self, session, releases):
+    def install_schedules_core(self, session, releases, show_alerts=True):
         for asset in releases[0]["assets"]:
             if "schedules-" in asset["name"]:
                 schedules_zip = download_file(session, asset["browser_download_url"])
@@ -136,10 +135,11 @@ class Updater():
                     with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
                         zip_ref.extractall(".")
                     subprocess.run(["rm", "-rf", asset["name"]])
-                    rumps.alert(
-                        title="Update Successful",
-                        message="Successfully updated schedules."
-                    )
+                    if show_alerts:
+                        rumps.alert(
+                            title="Update Successful",
+                            message="Successfully updated schedules."
+                        )
                     return True
                 except:
                     subprocess.run(["rm", "-rf", "schedules"])
@@ -151,7 +151,7 @@ class Updater():
                     return False
         return False
 
-    def update_schedules(self):
+    def update_schedules(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -168,10 +168,11 @@ class Updater():
                         if not update:
                             return
                     else:
-                        rumps.alert(
-                            title="You're Up to Date",
-                            message=f"You're on the latest available schedule version ({metadata_json["version"]})."
-                        )
+                        if show_alerts:
+                            rumps.alert(
+                                title="You're Up to Date",
+                                message=f"You're on the latest available schedule version ({metadata_json["version"]})."
+                            )
                         return
 
             self.install_schedules_core(session, releases)
@@ -215,6 +216,15 @@ class MenuBarSchedule(rumps.App):
         self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
         self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
 
+        self.app_startup_updates = rumps.MenuItem(title="Check for Updates on Startup")
+        self.app_startup_items = {
+            "app": rumps.MenuItem(title="App Updates", callback=self.toggle_startup_updates),
+            "schedule": rumps.MenuItem(title="Schedule Updates", callback=self.toggle_startup_updates)
+        }
+        for id, item in self.app_startup_items.items():
+            item.state = self.config[f"check_{id}_updates_on_startup"]
+            self.app_startup_updates.add(item)
+
         self.menu = [
             self.change_schedule,
             self.change_schedule_pack,
@@ -224,19 +234,18 @@ class MenuBarSchedule(rumps.App):
             rumps.separator,
             "Check for App Updates",
             "Check for Schedule Updates",
+            self.app_startup_updates,
             rumps.separator
         ]
 
-        if self.config["check_app_updates_on_startup"]:
-            self.updater.update_app()
-        elif self.config["check_schedule_updates_on_startup"]:
-            self.updater.update_schedules()
         self.refresh_schedules(self.change_schedule)
-
         self.timer = rumps.Timer(self.update_time_left, 0.5)
-        self.auto_update_app_timer = rumps.Timer(self.updater.update_app, 60 * 60)
-        self.auto_update_schedule_timer = rumps.Timer(self.updater.update_schedules, 60 * 60)
         self.timer.start()
+
+        if self.config["check_app_updates_on_startup"]:
+            self.updater.update_app(False)
+        elif self.config["check_schedule_updates_on_startup"]:
+            self.updater.update_schedules(False)
 
     def select_option_schedule(self, sender):
         if self.config["selected_schedule"] != "":
@@ -254,6 +263,22 @@ class MenuBarSchedule(rumps.App):
             # sender.state = False
         self.config_handler.save_config()
         self.refresh_schedules(None)
+
+    def toggle_startup_updates(self, sender):
+        if sender.title == "App Updates":
+            if self.config["check_app_updates_on_startup"]:
+                self.config["check_app_updates_on_startup"] = False
+            else:
+                self.config["check_app_updates_on_startup"] = True
+            sender.state = self.config["check_app_updates_on_startup"]
+        elif sender.title == "Schedule Updates":
+            if self.config["check_schedule_updates_on_startup"]:
+                self.config["check_schedule_updates_on_startup"] = False
+            else:
+                self.config["check_schedule_updates_on_startup"] = True
+            sender.state = self.config["check_schedule_updates_on_startup"]
+
+        self.config_handler.save_config()
 
     def update_time_left(self, _):
         now = datetime.now()
@@ -351,11 +376,11 @@ class MenuBarSchedule(rumps.App):
 
     @rumps.clicked("Check for App Updates")
     def check_updates(self, _):
-        self.updater.update_app()
+        self.updater.update_app(True)
 
     @rumps.clicked("Check for Schedule Updates")
     def update_schedules(self, _):
-        self.updater.update_schedules()
+        self.updater.update_schedules(True)
         self.refresh_schedules(None)
 
     @rumps.clicked("About")
