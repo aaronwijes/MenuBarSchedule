@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -89,7 +89,7 @@ class Updater():
 
             update = rumps.alert(
                 title="Update Available",
-                message=f"You can update to version v{releases[0]["tag_name"]}.\nInstall the update?",
+                message=f"You can update to version {releases[0]["tag_name"]}.\nInstall the update?",
                 cancel=True
             )
             if not update:
