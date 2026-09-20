@@ -18,9 +18,7 @@ Menu Bar Schedule shows how much time you have until your next class starts/ends
 * Select between 10+ schedule variants
 * See your schedule in detail
 * Schedule updates without updating the entire app
-
-## Upcoming Features
-* Auto-update for the app and schedules
+* Check for updates on app startup
 
 ## Building From Source
 There is a build script at `./build/build.py` that can be used to build the app.
