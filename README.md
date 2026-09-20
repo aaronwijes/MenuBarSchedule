@@ -6,7 +6,7 @@
 
 Menu Bar Schedule shows how much time you have until your next class starts/ends.
 
-<img width="3420" height="2224" alt="MenuBarSchedule" src="https://github.com/user-attachments/assets/31814608-1479-4ee4-b9a2-7cb7c0c3c584" />
+<img width="533" height="401" alt="image" src="https://github.com/user-attachments/assets/93c71e51-63be-49f3-97bc-7fa34bbcaea4" />
 
 ## Current Features
 * See how much time is left until your next class/event
