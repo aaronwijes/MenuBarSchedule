@@ -10,7 +10,19 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.10.2"
+VERSION = "0.11.0"
+VERSION_LIST = [int(component) for component in VERSION.split(".")]
+
+def is_update(new_version_list):
+    if new_version_list[0] > VERSION_LIST[0]:
+        return True
+    elif new_version_list[0] == VERSION_LIST[0]:
+        if new_version_list[1] > VERSION_LIST[1]:
+            return True
+        elif new_version_list[1] == VERSION_LIST[1]:
+            if new_version_list[2] > VERSION_LIST[2]:
+                return True
+    return False
 
 def get_title(timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
@@ -78,7 +90,7 @@ class Updater():
             if releases is None:
                 return
 
-            if releases[0]["tag_name"] == VERSION:
+            if not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
                 if show_alerts:
                     rumps.alert(
                         title="You're Up to Date",
