@@ -341,23 +341,6 @@ class MenuBarSchedule(rumps.App):
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
             self.title = get_title(self.config["use_shorthand"], "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
 
-    @rumps.clicked("View Current Schedule")
-    def view_schedule(self, _):
-        if self.config["selected_schedule"] != "":
-            message = ""
-            for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
-                message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
-            rumps.alert(
-                title=self.schedules[self.config["selected_schedule"]]["name"],
-                message=message
-            )
-        else:
-            rumps.alert(
-                title="No Schedule Selected",
-                message="No schedule is currently selected.\nSelect a schedule to view its timetable!"
-            )
-
-    # @rumps.clicked("Refresh Schedules")
     def refresh_schedules(self, _):
         self.schedules = {}
 
@@ -417,6 +400,22 @@ class MenuBarSchedule(rumps.App):
                 self.config["selected_schedule"] = ""
 
         self.config_handler.save_config()
+
+    @rumps.clicked("View Current Schedule")
+    def view_schedule(self, _):
+        if self.config["selected_schedule"] != "":
+            message = ""
+            for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
+                message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
+            rumps.alert(
+                title=self.schedules[self.config["selected_schedule"]]["name"],
+                message=message
+            )
+        else:
+            rumps.alert(
+                title="No Schedule Selected",
+                message="No schedule is currently selected.\nSelect a schedule to view its timetable!"
+            )
 
     @rumps.clicked("Check for App Updates")
     def check_updates(self, _):
