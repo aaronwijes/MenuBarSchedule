@@ -30,7 +30,7 @@ def get_title(use_shorthand, timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
     hours = seconds // 3600
     minutes = (seconds // 60) % 60
-    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else ""
+    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"({timeframe[0].upper()}{period}) "
     if hours > 0:
         title = f"{prefix}{hours}h {minutes}m"
     elif minutes > 0:
