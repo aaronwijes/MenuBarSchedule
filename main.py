@@ -30,7 +30,7 @@ def get_title(use_shorthand, timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
     hours = seconds // 3600
     minutes = (seconds // 60) % 60
-    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"({timeframe[0].upper()}{period}) "
+    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"{timeframe[0].upper()}-{period}: "
     if hours > 0:
         title = f"{prefix}{hours:02d}h {minutes:02d}m"
     elif minutes > 0:
@@ -247,7 +247,7 @@ class MenuBarSchedule(rumps.App):
             "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications (WIP)", callback=self.toggle_settings),
             "NO_CONFIG_1": rumps.separator,
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
-            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Starutp", callback=self.toggle_settings),
+            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings),
             "NO_CONFIG_2": rumps.separator,
             "NO_CONFIG_3": rumps.MenuItem(title="Refresh Schedules from JSON", callback=self.refresh_schedules),
         }
@@ -309,7 +309,7 @@ class MenuBarSchedule(rumps.App):
 
         self.config_handler.save_config()
 
-    def update_time_left(self, _):
+    def update_time_left(self, sender):
         now = datetime.now()
         day = now.day
         month = now.month
@@ -341,7 +341,7 @@ class MenuBarSchedule(rumps.App):
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
             self.title = get_title(self.config["use_shorthand"], "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
 
-    def refresh_schedules(self, _):
+    def refresh_schedules(self, sender):
         self.schedules = {}
 
         schedule_path = Path(self.config_handler.config_dir) / "schedules"
@@ -402,7 +402,7 @@ class MenuBarSchedule(rumps.App):
         self.config_handler.save_config()
 
     @rumps.clicked("View Current Schedule")
-    def view_schedule(self, _):
+    def view_schedule(self, sender):
         if self.config["selected_schedule"] != "":
             message = ""
             for period in self.schedules[self.config["selected_schedule"]]["schedule"].values():
@@ -418,16 +418,16 @@ class MenuBarSchedule(rumps.App):
             )
 
     @rumps.clicked("Check for App Updates")
-    def check_updates(self, _):
+    def check_updates(self, sender):
         self.updater.update_app(True)
 
     @rumps.clicked("Check for Schedule Updates")
-    def update_schedules(self, _):
+    def update_schedules(self, sender):
         self.updater.update_schedules(True)
         self.refresh_schedules(None)
 
     @rumps.clicked("About")
-    def about(self, _):
+    def about(self, sender):
         rumps.alert(
             title=f"About",
             message=f"Menu Bar Schedule shows how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/{GITHUB_USERNAME})"
