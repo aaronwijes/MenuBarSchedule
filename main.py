@@ -32,11 +32,11 @@ def get_title(use_shorthand, timeframe, period, seconds):
     minutes = (seconds // 60) % 60
     prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"({timeframe[0].upper()}{period}) "
     if hours > 0:
-        title = f"{prefix}{hours}h {minutes}m"
+        title = f"{prefix}{hours:02d}h {minutes:02d}m"
     elif minutes > 0:
-        title = f"{prefix}{minutes}m {seconds % 60}s"
+        title = f"{prefix}{minutes:02d}m {seconds % 60:02d}s"
     else:
-        title = f"{prefix}{seconds % 60}s"
+        title = f"{prefix}{seconds % 60:02d}s"
     return title
 
 def get_releases(session):
