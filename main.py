@@ -5,13 +5,15 @@ import requests
 import shutil
 import subprocess
 import zipfile
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "0.11.0"
+VERSION = "1.0.0"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
+
+REPO_NAME = "MenuBarSchedule"
+GITHUB_USERNAME = "aaronwijes"
 
 def is_update(new_version_list):
     if new_version_list[0] > VERSION_LIST[0]:
@@ -24,20 +26,21 @@ def is_update(new_version_list):
                 return True
     return False
 
-def get_title(timeframe, period, seconds):
+def get_title(use_shorthand, timeframe, period, seconds):
     title = f"{timeframe.upper()} ({period}): "
     hours = seconds // 3600
     minutes = (seconds // 60) % 60
+    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else ""
     if hours > 0:
-        title = f"{timeframe.upper()} ({period}): {seconds // 3600}h {(seconds // 60) % 60}m"
+        title = f"{prefix}{hours}h {minutes}m"
     elif minutes > 0:
-        title = f"{timeframe.upper()} ({period}): {(seconds // 60) % 60}m {seconds % 60}s"
+        title = f"{prefix}{minutes}m {seconds % 60}s"
     else:
-        title = f"{timeframe.upper()} ({period}): {seconds % 60}s"
+        title = f"{prefix}{seconds % 60}s"
     return title
 
 def get_releases(session):
-    releases_req = session.get("https://api.github.com/repos/aaronwijes/MenuBarSchedule/releases")
+    releases_req = session.get(f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/releases")
     if not releases_req.ok:
         rumps.alert(
             title="Connection Error",
@@ -57,22 +60,24 @@ def download_file(session, url):
 
 class Config():
     def __init__(self):
-        self.config_dir = Path(user_config_dir("MenuBarSchedule", "aaronwijes"))
+        self.config_dir = Path(user_config_dir(REPO_NAME, GITHUB_USERNAME))
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.config_path = f"{self.config_dir}/config.json"
 
         if not Path(self.config_path).exists():
             self.config = {
                 "version": VERSION,
-                "selected_schedule": "",
+                "use_shorthand": False,
                 "show_almost_end_notifs": False,
                 "check_app_updates_on_startup": False,
                 "check_schedule_updates_on_startup": False,
+                "selected_schedule": "",
                 "enabled_packs": ["siths"]
             }
         else:
             self.config = json.loads(Path(self.config_path).read_text())
             # run migration code here
+            # i will not include migration code until version 1.0.0
             self.config["version"] = VERSION
             self.save_config()
 
@@ -169,7 +174,10 @@ class Updater():
             for asset in releases[0]["assets"]:
                 if "schedules-" in asset["name"]:
                     metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
-                    metadata_json = json.loads(metadata.read_text())
+                    if metadata.exists():
+                        metadata_json = json.loads(metadata.read_text())
+                    else:
+                        metadata_json = {"version": 0}
                     if f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] == VERSION:
                         update = rumps.alert(
                             title="Schedule Updates Available",
@@ -206,13 +214,13 @@ class Updater():
             cancel=True
         )
         if not download_schedules:
-            sys.exit()
+            return
 
         session = requests.Session()
         releases = get_releases(session)
 
         if not self.install_schedules_core(session, releases, False):
-            sys.exit()
+            return
 
 class MenuBarSchedule(rumps.App):
     def __init__(self, config, updater):
@@ -233,26 +241,32 @@ class MenuBarSchedule(rumps.App):
         self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
         self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
 
-        self.app_startup_updates = rumps.MenuItem(title="Check for Updates on Startup")
-        self.app_startup_items = {
-            "app": rumps.MenuItem(title="App Updates", callback=self.toggle_startup_updates),
-            "schedule": rumps.MenuItem(title="Schedule Updates", callback=self.toggle_startup_updates)
+        self.settings = rumps.MenuItem(title="Settings")
+        self.settings_items = {
+            "use_shorthand": rumps.MenuItem(title="Shorten Title", callback=self.toggle_settings),
+            "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications (WIP)", callback=self.toggle_settings),
+            "NO_CONFIG_1": rumps.separator,
+            "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
+            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Starutp", callback=self.toggle_settings),
+            "NO_CONFIG_2": rumps.separator,
+            "NO_CONFIG_3": rumps.MenuItem(title="Refresh Schedules from JSON", callback=self.refresh_schedules),
         }
-        for id, item in self.app_startup_items.items():
-            item.state = self.config[f"check_{id}_updates_on_startup"]
-            self.app_startup_updates.add(item)
+        for id, item in self.settings_items.items():
+            if id in self.config:
+                item.state = self.config[id]
+            self.settings.add(item)
 
         self.menu = [
             self.change_schedule,
             self.change_schedule_pack,
-            "Refresh Schedules",
-            "View Schedule",
-            "About",
+            "View Current Schedule",
             rumps.separator,
             "Check for App Updates",
             "Check for Schedule Updates",
-            self.app_startup_updates,
-            rumps.separator
+            rumps.separator,
+            self.settings,
+            "About",
+            rumps.separator,
         ]
 
         self.refresh_schedules(self.change_schedule)
@@ -279,19 +293,19 @@ class MenuBarSchedule(rumps.App):
         self.config_handler.save_config()
         self.refresh_schedules(None)
 
-    def toggle_startup_updates(self, sender):
-        if sender.title == "App Updates":
-            if self.config["check_app_updates_on_startup"]:
-                self.config["check_app_updates_on_startup"] = False
-            else:
-                self.config["check_app_updates_on_startup"] = True
+    def toggle_settings(self, sender):
+        if sender.title == "Check for App Updates on Startup":
+            self.config["check_app_updates_on_startup"] = not self.config["check_app_updates_on_startup"]
             sender.state = self.config["check_app_updates_on_startup"]
-        elif sender.title == "Schedule Updates":
-            if self.config["check_schedule_updates_on_startup"]:
-                self.config["check_schedule_updates_on_startup"] = False
-            else:
-                self.config["check_schedule_updates_on_startup"] = True
+        elif sender.title == "Check for Schedule Updates on Startup":
+            self.config["check_schedule_updates_on_startup"] = not self.config["check_schedule_updates_on_startup"]
             sender.state = self.config["check_schedule_updates_on_startup"]
+        elif sender.title == "Shorten Title":
+            self.config["use_shorthand"] = not self.config["use_shorthand"]
+            sender.state = self.config["use_shorthand"]
+        elif sender.title == "Show Notifications (WIP)":
+            self.config["show_almost_end_notifs"] = not self.config["show_almost_end_notifs"]
+            sender.state = self.config["show_almost_end_notifs"]
 
         self.config_handler.save_config()
 
@@ -303,7 +317,7 @@ class MenuBarSchedule(rumps.App):
         found_period = False
 
         if self.config["selected_schedule"] == "":
-            self.title = "No Schedule Selected"
+            self.title = "No Schedule"
             return
 
         for period_id, period in self.schedules[self.config["selected_schedule"]]["schedule"].items():
@@ -311,12 +325,12 @@ class MenuBarSchedule(rumps.App):
             time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
 
             if time_until_start > 0:
-                self.title = get_title("start", period_id, time_until_start)
+                self.title = get_title(self.config["use_shorthand"], "start", period_id, time_until_start)
                 found_period = True
                 break
             elif time_until_end > 0:
                 found_period = True
-                self.title = get_title("end", period_id, time_until_end)
+                self.title = get_title(self.config["use_shorthand"], "end", period_id, time_until_end)
                 # rumps.notification(title=self.config["selected_schedule"], subtitle=f"{period["name"]} is almost ending!", message=f"{period["name"]} ends in {self.title}.")
                 break
         if not found_period:
@@ -325,9 +339,9 @@ class MenuBarSchedule(rumps.App):
             month = tomorrow.month
             year = tomorrow.year
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-            self.title = get_title("start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
+            self.title = get_title(self.config["use_shorthand"], "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
 
-    @rumps.clicked("View Schedule")
+    @rumps.clicked("View Current Schedule")
     def view_schedule(self, _):
         if self.config["selected_schedule"] != "":
             message = ""
@@ -343,54 +357,64 @@ class MenuBarSchedule(rumps.App):
                 message="No schedule is currently selected.\nSelect a schedule to view its timetable!"
             )
 
-    @rumps.clicked("Refresh Schedules")
+    # @rumps.clicked("Refresh Schedules")
     def refresh_schedules(self, _):
         self.schedules = {}
 
         schedule_path = Path(self.config_handler.config_dir) / "schedules"
         if not schedule_path.exists():
-            self.updater.install_schedules()
-
-        metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
-        metadata_json = json.loads(metadata.read_text())
-        for pack in metadata_json["packs"]:
-            if pack["name"] in self.config["enabled_packs"]:
-                schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"]
-                for schedule_json in schedule_path.glob("*.json"):
-                    schedule = json.loads((schedule_json.read_text()))
-                    self.schedules[schedule["name"]] = schedule
-
-        self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
-        self.pack_options = [pack for pack in metadata_json["packs"]]
-        if self.pack_options != []:
-            self.sub_items = {
-                opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
-                for opt in self.pack_options
-            }
-            self.change_schedule_pack.clear()
-            for item in self.sub_items.values():
-                if item.title in self.config["enabled_packs"]:
-                    item.state = True
-                self.change_schedule_pack.add(item)
-
-        if self.schedule_options != []:
-            self.sub_items = {
-                opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule)
-                for opt in self.schedule_options
-            }
-
-            if self.config["selected_schedule"] not in self.schedule_options:
-                self.config["selected_schedule"] = ""
-            if self.config["selected_schedule"] != "":
-                self.sub_items[self.config["selected_schedule"]].state = True
-
-            self.change_schedule.clear()
-            for item in self.sub_items.values():
-                self.change_schedule.add(item)
-        else:
             self.change_schedule.clear()
             self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
-            self.config["selected_schedule"] = ""
+
+            self.change_schedule_pack.clear()
+            self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
+
+            self.updater.install_schedules()
+
+        if schedule_path.exists():
+            metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
+            metadata_json = json.loads(metadata.read_text())
+            for pack in metadata_json["packs"]:
+                if pack["name"] in self.config["enabled_packs"]:
+                    schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"]
+                    for schedule_json in schedule_path.glob("*.json"):
+                        schedule = json.loads((schedule_json.read_text()))
+                        self.schedules[schedule["name"]] = schedule
+
+            self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
+            self.pack_options = [pack for pack in metadata_json["packs"]]
+            if self.pack_options != []:
+                self.sub_items = {
+                    opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
+                    for opt in self.pack_options
+                }
+                self.change_schedule_pack.clear()
+                for item in self.sub_items.values():
+                    if item.title in self.config["enabled_packs"]:
+                        item.state = True
+                    self.change_schedule_pack.add(item)
+            else:
+                self.change_schedule_pack.clear()
+                self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
+
+            if self.schedule_options != []:
+                self.sub_items = {
+                    opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule)
+                    for opt in self.schedule_options
+                }
+
+                if self.config["selected_schedule"] not in self.schedule_options:
+                    self.config["selected_schedule"] = ""
+                if self.config["selected_schedule"] != "":
+                    self.sub_items[self.config["selected_schedule"]].state = True
+
+                self.change_schedule.clear()
+                for item in self.sub_items.values():
+                    self.change_schedule.add(item)
+            else:
+                self.change_schedule.clear()
+                self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
+                self.config["selected_schedule"] = ""
 
         self.config_handler.save_config()
 
@@ -407,7 +431,7 @@ class MenuBarSchedule(rumps.App):
     def about(self, _):
         rumps.alert(
             title=f"About",
-            message=f"Menu Bar Schedule shows how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/aaronwijes)"
+            message=f"Menu Bar Schedule shows how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/{GITHUB_USERNAME})"
         )
 
 if __name__ == "__main__":
