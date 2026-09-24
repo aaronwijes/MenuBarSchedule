@@ -13,41 +13,41 @@
     },
     "3": {
       "start": "9:28 AM",
-      "end": "10:14 AM",
+      "end": "10:13 AM",
       "name": "Period 3"
     },
     "4": {
-      "start": "10:18 AM",
-      "end": "10:58 AM",
+      "start": "10:17 AM",
+      "end": "10:57 AM",
       "name": "Period 4"
     },
     "4F": {
-      "start": "10:58 AM",
-      "end": "11:08 AM",
+      "start": "10:57 AM",
+      "end": "11:07 AM",
       "name": "Period 4F"
     },
     "5": {
-      "start": "11:11 AM",
-      "end": "11:51 AM",
+      "start": "11:10 AM",
+      "end": "11:50 AM",
       "name": "Period 5"
     },
     "6": {
-      "start": "11:55 AM",
-      "end": "12:35 PM",
+      "start": "11:54 AM",
+      "end": "12:34 PM",
       "name": "Period 6"
     },
     "7": {
-      "start": "12:39 PM",
-      "end": "1:19 PM",
+      "start": "12:38 PM",
+      "end": "1:18 PM",
       "name": "Period 7"
     },
     "8": {
-      "start": "1:23 PM",
-      "end": "2:03 PM",
+      "start": "1:22 PM",
+      "end": "2:02 PM",
       "name": "Period 8"
     },
     "9": {
-      "start": "2:07 PM",
+      "start": "2:06 PM",
       "end": "2:47 PM",
       "name": "Period 9"
     }

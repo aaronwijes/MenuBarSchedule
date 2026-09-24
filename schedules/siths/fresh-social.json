@@ -1,0 +1,60 @@
+{
+  "name": "Freshman Social",
+  "schedule": {
+    "1": {
+      "start": "8:00 AM",
+      "end": "8:38 AM",
+      "name": "Period 1"
+    },
+    "2": {
+      "start": "8:42 AM",
+      "end": "9:15 AM",
+      "name": "Period 2"
+    },
+    "HR": {
+      "start": "9:19 AM",
+      "end": "9:30 AM",
+      "name": "Homeroom"
+    },
+    "3": {
+      "start": "9:34 AM",
+      "end": "10:07 AM",
+      "name": "Period 3"
+    },
+    "4": {
+      "start": "10:11 AM",
+      "end": "10:44 AM",
+      "name": "Period 4"
+    },
+    "5": {
+      "start": "10:48 AM",
+      "end": "11:21 AM",
+      "name": "Period 5"
+    },
+    "6": {
+      "start": "11:25 AM",
+      "end": "11:58 AM",
+      "name": "Period 6"
+    },
+    "7": {
+      "start": "12:02 PM",
+      "end": "12:35 PM",
+      "name": "Period 7"
+    },
+    "8": {
+      "start": "12:39 PM",
+      "end": "1:12 PM",
+      "name": "Period 8"
+    },
+    "9": {
+      "start": "1:16 PM",
+      "end": "1:49 PM",
+      "name": "Period 9"
+    },
+    "FS": {
+      "start": "1:53 PM",
+      "end": "2:47 PM",
+      "name": "Freshman Social"
+    }
+  }
+}
