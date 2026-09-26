@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -26,17 +26,22 @@ def is_update(new_version_list):
                 return True
     return False
 
-def get_title(use_shorthand, timeframe, period, seconds):
+def get_title(config, timeframe, period, seconds):
+    use_shorthand = config["use_shorthand"]
+    hide_seconds = config["hide_seconds"]
+
     title = f"{timeframe.upper()} ({period}): "
     hours = seconds // 3600
     minutes = (seconds // 60) % 60
-    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"{timeframe[0].upper()}-{period}: "
+
+    prefix = f"{timeframe.upper()} ({period}): " if not use_shorthand else f"{timeframe[0].upper()}({period}): "
     if hours > 0:
-        title = f"{prefix}{hours:02d}h {minutes:02d}m"
+        title = f"{prefix}{hours}h {minutes}m"
     elif minutes > 0:
-        title = f"{prefix}{minutes:02d}m {seconds % 60:02d}s"
+        title = f"{prefix}{minutes}m" + (f" {seconds % 60}s" if not hide_seconds else "")
     else:
-        title = f"{prefix}{seconds % 60:02d}s"
+        title = f"{prefix}{seconds % 60}s"
+
     return title
 
 def get_releases(session):
@@ -64,22 +69,29 @@ class Config():
         self.config_dir.mkdir(parents=True, exist_ok=True)
         self.config_path = f"{self.config_dir}/config.json"
 
+        self.default_config = {
+            "version": VERSION,
+            "use_shorthand": False,
+            "hide_seconds": False,
+            "show_almost_end_notifs": False,
+            "check_app_updates_on_startup": False,
+            "check_schedule_updates_on_startup": False,
+            "selected_schedule": "",
+            "enabled_packs": ["siths"] # this is the default pack for now, but may be set to a blank list if more schools are added
+        }
+
         if not Path(self.config_path).exists():
-            self.config = {
-                "version": VERSION,
-                "use_shorthand": False,
-                "show_almost_end_notifs": False,
-                "check_app_updates_on_startup": False,
-                "check_schedule_updates_on_startup": False,
-                "selected_schedule": "",
-                "enabled_packs": ["siths"]
-            }
+            self.config = {}
         else:
             self.config = json.loads(Path(self.config_path).read_text())
-            # run migration code here
-            # i will not include migration code until version 1.0.0
+            # [insert migration code here]
             self.config["version"] = VERSION
-            self.save_config()
+
+        for key, value in self.default_config.items():
+            if key not in self.config:
+                self.config[key] = value
+        
+        self.save_config()
 
     def save_config(self):
         open(self.config_path, "w").write(json.dumps(self.config, indent=2))
@@ -241,10 +253,13 @@ class MenuBarSchedule(rumps.App):
         self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
         self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
 
+        self.last_notified_period = None
+
         self.settings = rumps.MenuItem(title="Settings")
         self.settings_items = {
             "use_shorthand": rumps.MenuItem(title="Shorten Title", callback=self.toggle_settings),
-            "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications (WIP)", callback=self.toggle_settings),
+            "hide_seconds": rumps.MenuItem(title="Hide Seconds Unit (>1 min)", callback=self.toggle_settings),
+            "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications Before Period Ends", callback=self.toggle_settings),
             "NO_CONFIG_1": rumps.separator,
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
             "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings),
@@ -294,26 +309,22 @@ class MenuBarSchedule(rumps.App):
         self.refresh_schedules(None)
 
     def toggle_settings(self, sender):
-        if sender.title == "Check for App Updates on Startup":
-            self.config["check_app_updates_on_startup"] = not self.config["check_app_updates_on_startup"]
-            sender.state = self.config["check_app_updates_on_startup"]
-        elif sender.title == "Check for Schedule Updates on Startup":
-            self.config["check_schedule_updates_on_startup"] = not self.config["check_schedule_updates_on_startup"]
-            sender.state = self.config["check_schedule_updates_on_startup"]
-        elif sender.title == "Shorten Title":
-            self.config["use_shorthand"] = not self.config["use_shorthand"]
-            sender.state = self.config["use_shorthand"]
-        elif sender.title == "Show Notifications (WIP)":
-            self.config["show_almost_end_notifs"] = not self.config["show_almost_end_notifs"]
-            sender.state = self.config["show_almost_end_notifs"]
-
-        self.config_handler.save_config()
+        cfg_lookup = {
+            "Check for App Updates on Startup": "check_app_updates_on_startup",
+            "Check for Schedule Updates on Startup": "check_schedule_updates_on_startup",
+            "Shorten Title": "use_shorthand",
+            "Hide Seconds Unit (>1 min)": "hide_seconds",
+            "Show Notifications Before Period Ends": "show_almost_end_notifs"
+        }
+        if sender.title in cfg_lookup:
+            config_key = cfg_lookup[sender.title]
+            self.config[config_key] = not self.config[config_key]
+            sender.state = self.config[config_key]
+            self.config_handler.save_config()
 
     def update_time_left(self, sender):
         now = datetime.now()
-        day = now.day
-        month = now.month
-        year = now.year
+        day, month, year = now.day, now.month, now.year
         found_period = False
 
         if self.config["selected_schedule"] == "":
@@ -325,21 +336,21 @@ class MenuBarSchedule(rumps.App):
             time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
 
             if time_until_start > 0:
-                self.title = get_title(self.config["use_shorthand"], "start", period_id, time_until_start)
                 found_period = True
+                self.title = get_title(self.config, "start", period_id, time_until_start)
                 break
             elif time_until_end > 0:
                 found_period = True
-                self.title = get_title(self.config["use_shorthand"], "end", period_id, time_until_end)
-                # rumps.notification(title=self.config["selected_schedule"], subtitle=f"{period["name"]} is almost ending!", message=f"{period["name"]} ends in {self.title}.")
+                self.title = get_title(self.config, "end", period_id, time_until_end)
+                if self.config["show_almost_end_notifs"] and time_until_end <= 300 and self.last_notified_period != period_id:
+                    rumps.notification(title="Menu Bar Schedule", subtitle="", message=f"{period["name"]} is ending in five minutes ({period["end"]}).", sound=False)
+                    self.last_notified_period = period_id
                 break
         if not found_period:
             tomorrow = datetime.today() + timedelta(days=1)
-            day = tomorrow.day
-            month = tomorrow.month
-            year = tomorrow.year
+            day, month, year = tomorrow.day, tomorrow.month, tomorrow.year
             time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-            self.title = get_title(self.config["use_shorthand"], "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
+            self.title = get_title(self.config, "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
 
     def refresh_schedules(self, sender):
         self.schedules = {}
