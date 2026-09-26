@@ -77,7 +77,9 @@ class Config():
             "check_app_updates_on_startup": False,
             "check_schedule_updates_on_startup": False,
             "selected_schedule": "",
-            "enabled_packs": ["siths"] # this is the default pack for now, but may be set to a blank list if more schools are added
+            "enabled_packs": [
+                "Staten Island Technical High School"
+            ] # this is the default for now, but may be set to a blank list if more schools are added
         }
 
         if not Path(self.config_path).exists():
