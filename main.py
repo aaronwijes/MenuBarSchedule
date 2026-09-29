@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
