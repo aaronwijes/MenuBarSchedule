@@ -47,7 +47,7 @@ app = BUNDLE(
     coll,
     name='MenuBarSchedule.app',
     icon='Resources/AppIcon.icns',
-    bundle_identifier=None,
+    bundle_identifier='com.aaronwijes.MenuBarSchedule',
     info_plist={
         'CFBundleDisplayName': 'MenuBarSchedule',
         'CFBundleName': 'MenuBarSchedule',

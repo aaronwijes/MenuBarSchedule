@@ -1,7 +1,16 @@
 import json
 
 schedule_data = """
-
+1	8:00 AM	38	8:38 AM	4
+2	8:42 AM	30	9:12 AM	4
+3	9:16 AM	33	9:49 AM	4
+4	9:53 AM	30	10:23 AM	4
+5	10:27 AM	30	10:57 AM	4
+6	11:01 AM	30	11:31 AM	4
+7	11:35 AM	30	12:05 PM	4
+8	12:09 PM	30	12:39 PM	4
+9	12:43 PM	30	1:13 PM	9
+FAIR	1:22 PM	85	2:47 PM
 """
 
 name_map = {
