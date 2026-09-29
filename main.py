@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -199,22 +199,22 @@ class Updater():
                             cancel=True
                         )
                         if not update:
-                            return
+                            return False
                     elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION:
                         rumps.alert(
                             title="Cannot Update Schedules",
                             message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
                         )
-                        return
+                        return False
                     else:
                         if show_alerts:
                             rumps.alert(
                                 title="You're Up to Date",
                                 message=f"You're on the latest available schedule version ({metadata_json["version"]})."
                             )
-                        return
+                        return False
 
-            self.install_schedules_core(session, releases)
+            return self.install_schedules_core(session, releases)
         except requests.exceptions.ConnectionError:
             rumps.alert(
                 title="Connection Error",
@@ -436,8 +436,8 @@ class MenuBarSchedule(rumps.App):
 
     @rumps.clicked("Check for Schedule Updates")
     def update_schedules(self, sender):
-        self.updater.update_schedules(True)
-        self.refresh_schedules(None)
+        if self.updater.update_schedules(True):
+            self.refresh_schedules(None)
 
     @rumps.clicked("About")
     def about(self, sender):
