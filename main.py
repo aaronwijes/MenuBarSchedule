@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
 
-VERSION = "1.1.2"
+VERSION = "2.0.0"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -372,7 +372,7 @@ class MenuBarSchedule(rumps.App):
             metadata_json = json.loads(metadata.read_text())
             for pack in metadata_json["packs"]:
                 if pack["name"] in self.config["enabled_packs"]:
-                    schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"]
+                    schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "json"
                     for schedule_json in schedule_path.glob("*.json"):
                         schedule = json.loads((schedule_json.read_text()))
                         self.schedules[schedule["name"]] = schedule
