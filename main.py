@@ -201,12 +201,20 @@ class Updater():
                         )
                         if not update:
                             return False
-                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION:
+                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION and is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
                         rumps.alert(
                             title="Cannot Update Schedules",
                             message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
                         )
                         return False
+                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION and not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
+                        continue_update = rumps.alert(
+                            title="Schedule Updates Available",
+                            message=f"A schedule update was found, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
+                            cancel=True
+                        )
+                        if not continue_update:
+                            return False
                     else:
                         if show_alerts:
                             rumps.alert(
