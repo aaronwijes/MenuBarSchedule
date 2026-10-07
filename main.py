@@ -367,7 +367,8 @@ class MenuBarSchedule(rumps.App):
                         self.change_schedule.add(item)
 
         if self.config["selected_schedule"] == "":
-            self.title = "No Schedule"
+            if self.title != "No Schedule":
+                self.title = "No Schedule"
             return
 
         proposed_title = ""
