@@ -1,3 +1,20 @@
 {
-    "version": 1
+    "default": "Regular Bell Schedule",
+    "exceptions": {
+        "10/15/2026": "Faculty Conference",
+        "10/23/2026": "Field Day",
+        "11/20/2026": "Parent Teacher Conference",
+        "12/15/2026": "Faculty Conference",
+        "2/4/2027": "Evacuation Drill (2F)",
+        "2/10/2027": "Assembly (3A/3B)",
+        "2/12/2027": "Evacuation Drill (5F)",
+        "2/26/2027": "Evacuation Drill (9F)",
+        "3/2/2027": "Faculty Conference",
+        "3/4/2027": "Evacuation Drill (2F)",
+        "3/10/2027": "School Survey",
+        "3/19/2027": "Parent Teacher Conference",
+        "5/4/2027": "Evacuation Drill (2F)",
+        "5/5/2027": "Faculty Conference",
+        "6/4/2027": "Assembly (3A/3B)"
+    }
 }

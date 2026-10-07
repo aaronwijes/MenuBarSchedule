@@ -76,6 +76,7 @@ class Config():
             "show_almost_end_notifs": False,
             "check_app_updates_on_startup": False,
             "check_schedule_updates_on_startup": False,
+            "set_schedule_based_on_calendar": False,
             "selected_schedule": "",
             "enabled_packs": [
                 "Staten Island Technical High School"
@@ -245,6 +246,7 @@ class MenuBarSchedule(rumps.App):
         self.config = config.config
         self.config_handler = config
         self.updater = updater
+        self.calendar = None
 
         self.sub_items = {}
         self.schedules = {}
@@ -262,6 +264,7 @@ class MenuBarSchedule(rumps.App):
             "use_shorthand": rumps.MenuItem(title="Shorten Title", callback=self.toggle_settings),
             "hide_seconds": rumps.MenuItem(title="Hide Seconds Unit (>1 min)", callback=self.toggle_settings),
             "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications Before Period Ends", callback=self.toggle_settings),
+            "set_schedule_based_on_calendar": rumps.MenuItem(title="Set Schedule Based on Calendar", callback=self.toggle_settings),
             "NO_CONFIG_1": rumps.separator,
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
             "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings),
@@ -287,7 +290,7 @@ class MenuBarSchedule(rumps.App):
         ]
 
         self.refresh_schedules(self.change_schedule)
-        self.timer = rumps.Timer(self.update_time_left, 0.1)
+        self.timer = rumps.Timer(self.update_time_left, interval=1.0)
         self.timer.start()
 
         if self.config["check_app_updates_on_startup"]:
@@ -316,7 +319,8 @@ class MenuBarSchedule(rumps.App):
             "Check for Schedule Updates on Startup": "check_schedule_updates_on_startup",
             "Shorten Title": "use_shorthand",
             "Hide Seconds Unit (>1 min)": "hide_seconds",
-            "Show Notifications Before Period Ends": "show_almost_end_notifs"
+            "Show Notifications Before Period Ends": "show_almost_end_notifs",
+            "Set Schedule Based on Calendar": "set_schedule_based_on_calendar"
         }
         if sender.title in cfg_lookup:
             config_key = cfg_lookup[sender.title]
@@ -324,35 +328,85 @@ class MenuBarSchedule(rumps.App):
             sender.state = self.config[config_key]
             self.config_handler.save_config()
 
+        if sender.title == "Set Schedule Based on Calendar":
+            self.refresh_schedules(None)
+
     def update_time_left(self, sender):
         now = datetime.now()
-        day, month, year = now.day, now.month, now.year
         found_period = False
+
+        if self.config["set_schedule_based_on_calendar"]:
+            if self.calendar != None:
+                if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
+                    self.config["selected_schedule"] = self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
+                else:
+                    self.config["selected_schedule"] = self.calendar["default"]
+
+                self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
+                if self.schedule_options != []:
+                    self.sub_items = {
+                        opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.config["set_schedule_based_on_calendar"] else None)
+                        for opt in self.schedule_options
+                    }
+
+                    if self.config["selected_schedule"] not in self.schedule_options:
+                        self.config["selected_schedule"] = ""
+                    if self.config["selected_schedule"] != "":
+                        self.sub_items[self.config["selected_schedule"]].state = True
+
+                    self.change_schedule.clear()
+                    for item in self.sub_items.values():
+                        self.change_schedule.add(item)
 
         if self.config["selected_schedule"] == "":
             self.title = "No Schedule"
             return
 
-        for period_id, period in self.schedules[self.config["selected_schedule"]]["schedule"].items():
-            time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {period["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-            time_until_end = round((datetime.strptime(f"{month}/{day}/{year} {period["end"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
+        proposed_title = ""
+        selected_schedule = self.schedules[self.config["selected_schedule"]]
+        for period_id, period in selected_schedule["schedule"].items():
+            start = datetime(
+                year=now.year,
+                month=now.month,
+                day=now.day,
+                hour=period["parsed_start"].hour,
+                minute=period["parsed_start"].minute
+            )
+            end = datetime(
+                year=now.year,
+                month=now.month,
+                day=now.day,
+                hour=period["parsed_end"].hour,
+                minute=period["parsed_end"].minute
+            )
+            time_until_start = round((start - now).total_seconds())
+            time_until_end = round((end - now).total_seconds())
 
             if time_until_start > 0:
                 found_period = True
-                self.title = get_title(self.config, "start", period_id, time_until_start)
+                proposed_title = get_title(self.config, "start", period_id, time_until_start)
                 break
             elif time_until_end > 0:
                 found_period = True
-                self.title = get_title(self.config, "end", period_id, time_until_end)
+                proposed_title = get_title(self.config, "end", period_id, time_until_end)
                 if self.config["show_almost_end_notifs"] and time_until_end <= 300 and self.last_notified_period != period_id:
                     rumps.notification(title="Menu Bar Schedule", subtitle="", message=f"{period["name"]} is ending in five minutes ({period["end"]}).", sound=False)
                     self.last_notified_period = period_id
                 break
         if not found_period:
             tomorrow = datetime.today() + timedelta(days=1)
-            day, month, year = tomorrow.day, tomorrow.month, tomorrow.year
-            time_until_start = round((datetime.strptime(f"{month}/{day}/{year} {self.schedules[self.config["selected_schedule"]]["schedule"][list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0]]["start"]}", "%m/%d/%Y %I:%M %p") - now).total_seconds())
-            self.title = get_title(self.config, "start", list(self.schedules[self.config["selected_schedule"]]["schedule"].keys())[0], time_until_start)
+            start = datetime(
+                year=tomorrow.year,
+                month=tomorrow.month,
+                day=tomorrow.day,
+                hour=list(selected_schedule["schedule"].values())[0]["parsed_start"].hour,
+                minute=list(selected_schedule["schedule"].values())[0]["parsed_start"].minute
+            )
+            time_until_start = round((start - now).total_seconds())
+            proposed_title = get_title(self.config, "start", list(selected_schedule["schedule"].keys())[0], time_until_start)
+
+        if self.title != proposed_title:
+            self.title = proposed_title
 
     def refresh_schedules(self, sender):
         self.schedules = {}
@@ -375,7 +429,16 @@ class MenuBarSchedule(rumps.App):
                     schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "json"
                     for schedule_json in schedule_path.glob("*.json"):
                         schedule = json.loads((schedule_json.read_text()))
+                        for period in schedule["schedule"].values():
+                            period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
+                            period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
                         self.schedules[schedule["name"]] = schedule
+
+                    calendar_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "calendar.json"
+                    if calendar_path.exists():
+                        self.calendar = json.loads((calendar_path.read_text()))
+                    else:
+                        self.calendar = None
 
             self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
             self.pack_options = [pack for pack in metadata_json["packs"]]
@@ -395,7 +458,7 @@ class MenuBarSchedule(rumps.App):
 
             if self.schedule_options != []:
                 self.sub_items = {
-                    opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule)
+                    opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.config["set_schedule_based_on_calendar"] else None)
                     for opt in self.schedule_options
                 }
 
