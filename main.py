@@ -346,9 +346,11 @@ class MenuBarSchedule(rumps.App):
         if self.config["set_schedule_based_on_calendar"]:
             if self.calendar != None:
                 if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
-                    self.config["selected_schedule"] = self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
+                    if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedules:
+                        self.config["selected_schedule"] = self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
                 else:
-                    self.config["selected_schedule"] = self.calendar["default"]
+                    if self.calendar["default"] in self.schedules:
+                        self.config["selected_schedule"] = self.calendar["default"]
 
                 self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
                 if self.schedule_options != []:
