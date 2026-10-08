@@ -32,13 +32,13 @@ jobs:
     - name: Build macOS App Bundle
       run: |
         pyinstaller ./resources/MenuBarSchedule.spec
-        rm -rf ./dist/MenuBarSchedule
+        ditto -c -k --sequesterRsrc --keepParent dist/MenuBarSchedule.app MenuBarSchedule.app.zip
 
     - name: Upload Built App Package
       uses: actions/upload-artifact@v7
       with:
-        name: MenuBarSchedule.app
-        path: dist/
+        name: MenuBarSchedule.app.zip
+        path: dist/MenuBarSchedule.app.zip
 
     - name: Release
       uses: softprops/action-gh-release@v3
