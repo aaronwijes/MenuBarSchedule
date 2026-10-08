@@ -3,6 +3,8 @@ name: Build macOS App
 on:
   push:
     branches: [ main ]
+    tags:
+      - "*.*.*"
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -36,3 +38,13 @@ jobs:
       with:
         name: MenuBarSchedule.app
         path: dist/MenuBarSchedule.app/
+
+    - name: Release
+      uses: softprops/action-gh-release@v3
+      if: github.ref_type == 'tag'
+      with:
+        files: |
+          dist/MenuBarSchedule.app/
+          dist/schedules.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
