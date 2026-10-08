@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['resources/MenuBarSchedule.py'],
+    ['../main.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -46,13 +46,13 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='MenuBarSchedule.app',
-    icon='Resources/AppIcon.icns',
+    icon='AppIcon.icns',
     bundle_identifier='com.aaronwijes.MenuBarSchedule',
     info_plist={
         'CFBundleDisplayName': 'MenuBarSchedule',
         'CFBundleName': 'MenuBarSchedule',
-        'CFBundleShortVersionString': '0.0.0',
-        'CFBundleVersion': '0.0.0',
+        'CFBundleShortVersionString': '2.0.0',
+        'CFBundleVersion': '2.0.0',
         'LSUIElement': True,
         'NSHighResolutionCapable': True,
     },
