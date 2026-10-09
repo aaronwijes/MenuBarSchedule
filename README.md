@@ -22,6 +22,9 @@ Menu Bar Schedule shows how much time is left until your next class starts/ends.
     * With >1h remaining until the next period, v2 uses ~100x less CPU when the app is idle compared to v1.1.1 (0.1% vs. 11.0%)
     * With <=1h remaining until the next period, v2 uses ~4x less CPU when the app is idle compared to v1.1.1 (2.5% vs. 11.0%)
     * These improvements are possible due to more efficient menubar title rendering and slower polling rates!
+* Full support for GitHub Actions
+    * `build_release.py` will be deprecated after 2.0.0's release
+* Support for Python 3.15 features such as lazy imports for slightly faster app startup
 * More to come!
 
 ## Building From Source
