@@ -4,5 +4,6 @@
 *.iconset
 *.code-workspace
 *.app
+*.env
 artifacts/
 menubarschedule.py
