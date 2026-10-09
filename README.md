@@ -14,18 +14,7 @@ Menu Bar Schedule shows how much time is left until your next class starts/ends.
 * See your schedule timetable in detail
 * Install schedule updates without updating the entire app
 * Check for updates on app startup
-
-## v2.0.0 Roadmap
-* **This section will be removed on v2's release.**
-* Schedule packs can optionally include calendars to automatically select schedules which diverge from a default schedule
-* Huge CPU optimizations
-    * With >1h remaining until the next period, v2 uses ~100x less CPU when the app is idle compared to v1.1.1 (0.1% vs. 11.0%)
-    * With <=1h remaining until the next period, v2 uses ~4x less CPU when the app is idle compared to v1.1.1 (2.5% vs. 11.0%)
-    * These improvements are possible due to more efficient menubar title rendering and slower polling rates!
-* Full support for GitHub Actions
-    * `build_release.py` will be deprecated after 2.0.0's release
-* Support for Python 3.15 features such as lazy imports for slightly faster app startup
-* More to come!
+* Automatically set the correct schedule with a calendar (may not work with all schedule packs)
 
 ## Building From Source
 There is a build script at `build.py` which can be used to build the app.<br>

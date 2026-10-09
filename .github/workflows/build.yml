@@ -11,6 +11,8 @@ on:
 
 jobs:
   build-mac:
+    permissions:
+      contents: write
     name: Build macOS App
     runs-on: macos-latest
 
