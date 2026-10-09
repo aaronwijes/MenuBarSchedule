@@ -1,13 +1,14 @@
 import os
 import json
 import rumps
-import requests
-import shutil
-import subprocess
 import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from platformdirs import user_config_dir
+
+lazy import requests
+lazy import shutil
+lazy import subprocess
 
 VERSION = "2.0.0"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
@@ -130,7 +131,7 @@ class Updater():
                 if "MenuBarSchedule.app.zip" == asset["name"]:
                     app_darwin = download_file(session, asset["browser_download_url"])
                     open("MenuBarSchedule.app.zip", "wb").write(app_darwin)
-                    if os.path.exists("/Applications/MenuBarSchedule.app"):
+                    if Path("/Applications/MenuBarSchedule.app").exists():
                         shutil.rmtree("/Applications/MenuBarSchedule.app")
                     try:
                         with zipfile.ZipFile("MenuBarSchedule.app.zip", 'r') as zip_ref:
@@ -160,7 +161,7 @@ class Updater():
             if "schedules-" in asset["name"]:
                 schedules_zip = download_file(session, asset["browser_download_url"])
                 open(asset["name"], "wb").write(schedules_zip)
-                if os.path.exists("./schedules/"):
+                if Path("./schedules/").exists():
                     shutil.rmtree("./schedules/")
                 try:
                     with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
