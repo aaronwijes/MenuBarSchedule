@@ -34,11 +34,21 @@ jobs:
         pyinstaller ./resources/MenuBarSchedule.spec
         ditto -c -k --sequesterRsrc --keepParent dist/MenuBarSchedule.app dist/MenuBarSchedule.app.zip
 
-    - name: Upload Built App Package
+    - name: Build schedules
+      run: |
+        zip -q dist/schedules.zip ./schedules/*
+
+    - name: Upload app package
       uses: actions/upload-artifact@v7
       with:
         name: MenuBarSchedule.app.zip
         path: dist/MenuBarSchedule.app.zip
+
+    - name: Upload schedules
+      uses: actions/upload-artifact@v7
+      with:
+        name: schedules.zip
+        path: dist/schedules.zip
 
     - name: Release
       uses: softprops/action-gh-release@v3
