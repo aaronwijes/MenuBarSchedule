@@ -158,15 +158,15 @@ class Updater():
 
     def install_schedules_core(self, session, releases, show_alerts=True):
         for asset in releases[0]["assets"]:
-            if "schedules-" in asset["name"]:
+            if asset["name"] == "schedules.zip":
                 schedules_zip = download_file(session, asset["browser_download_url"])
-                open(asset["name"], "wb").write(schedules_zip)
+                open("schedules.zip", "wb").write(schedules_zip)
                 if Path("./schedules/").exists():
                     shutil.rmtree("./schedules/")
                 try:
-                    with zipfile.ZipFile(asset["name"], 'r') as zip_ref:
+                    with zipfile.ZipFile("schedules.zip", 'r') as zip_ref:
                         zip_ref.extractall(".")
-                    subprocess.run(["rm", "-rf", asset["name"]])
+                    subprocess.run(["rm", "-rf", "schedules.zip"])
                     if show_alerts:
                         rumps.alert(
                             title="Update Successful",
@@ -175,7 +175,7 @@ class Updater():
                     return True
                 except:
                     subprocess.run(["rm", "-rf", "schedules"])
-                    subprocess.run(["rm", "-rf", asset["name"]])
+                    subprocess.run(["rm", "-rf", "schedules.zip"])
                     rumps.alert(
                         title="Update Failed",
                         message="Failed to update schedules."
@@ -187,42 +187,63 @@ class Updater():
         try:
             session = requests.Session()
             releases = get_releases(session)
+
+            schedules_present = False
+            schedules_metadata_present = False
             for asset in releases[0]["assets"]:
-                if "schedules-" in asset["name"]:
-                    metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
-                    if metadata.exists():
-                        metadata_json = json.loads(metadata.read_text())
-                    else:
-                        metadata_json = {"version": 0}
-                    if f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] == VERSION:
-                        update = rumps.alert(
-                            title="Schedule Updates Available",
-                            message=f"A schedule update was found.\nInstall the update?",
-                            cancel=True
-                        )
-                        if not update:
-                            return False
-                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION and is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
-                        rumps.alert(
-                            title="Cannot Update Schedules",
-                            message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
-                        )
-                        return False
-                    elif f"schedules-v{metadata_json["version"]}.zip" != asset["name"] and releases[0]["tag_name"] != VERSION and not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
-                        continue_update = rumps.alert(
-                            title="Schedule Updates Available",
-                            message=f"A schedule update was found, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
-                            cancel=True
-                        )
-                        if not continue_update:
-                            return False
-                    else:
-                        if show_alerts:
-                            rumps.alert(
-                                title="You're Up to Date",
-                                message=f"You're on the latest available schedule version ({metadata_json["version"]})."
-                            )
-                        return False
+                if asset["name"] == "schedules.zip":
+                    schedules_present = True
+                elif asset["name"] == "schedule_version.txt":
+                    schedules_metadata_present = True
+                    schedules_metadata_url = asset["browser_download_url"]
+
+            if not (schedules_present and schedules_metadata_present):
+                rumps.alert(
+                    title="Cannot Update Schedules",
+                    message=f"Either the schedule files or schedule metadata are not present."
+                )
+                return False
+
+            metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
+            if metadata.exists():
+                metadata_json = json.loads(metadata.read_text())
+            else:
+                metadata_json = {"version": 0}
+
+            latest_schedule_version = int(download_file(session, schedules_metadata_url).decode())
+            is_schedule_update = latest_schedule_version > metadata_json["version"]
+            is_app_version_same = releases[0]["tag_name"] == VERSION
+            is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
+
+            if is_schedule_update and is_app_version_same:
+                update = rumps.alert(
+                    title="Schedule Updates Available",
+                    message=f"A schedule update was found.\nInstall the update?",
+                    cancel=True
+                )
+                if not update:
+                    return False
+            elif is_schedule_update and not is_app_version_same and is_later_app_version:
+                rumps.alert(
+                    title="Cannot Update Schedules",
+                    message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
+                )
+                return False
+            elif is_schedule_update and not is_app_version_same and not is_later_app_version:
+                continue_update = rumps.alert(
+                    title="Schedule Updates Available",
+                    message=f"A schedule update was found, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
+                    cancel=True
+                )
+                if not continue_update:
+                    return False
+            else:
+                if show_alerts:
+                    rumps.alert(
+                        title="You're Up to Date",
+                        message=f"You're on the latest available schedule version ({metadata_json["version"]})."
+                    )
+                return False
 
             return self.install_schedules_core(session, releases)
         except requests.exceptions.ConnectionError:
@@ -230,6 +251,13 @@ class Updater():
                 title="Connection Error",
                 message="An unexpected error occured!"
             )
+            return False
+        except ValueError:
+            rumps.alert(
+                title="Cannot Update Schedules",
+                message=f"The schedule metadata seems to be corrupt."
+            )
+            return False
 
     def install_schedules(self):
         download_schedules = rumps.alert(
@@ -453,21 +481,6 @@ class MenuBarSchedule(rumps.App):
                         self.calendar = None
 
             self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
-            self.pack_options = [pack for pack in metadata_json["packs"]]
-            if self.pack_options != []:
-                self.sub_items = {
-                    opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
-                    for opt in self.pack_options
-                }
-                self.change_schedule_pack.clear()
-                for item in self.sub_items.values():
-                    if item.title in self.config["enabled_packs"]:
-                        item.state = True
-                    self.change_schedule_pack.add(item)
-            else:
-                self.change_schedule_pack.clear()
-                self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
-
             if self.schedule_options != []:
                 self.sub_items = {
                     opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.config["set_schedule_based_on_calendar"] else None)
@@ -486,6 +499,21 @@ class MenuBarSchedule(rumps.App):
                 self.change_schedule.clear()
                 self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
                 self.config["selected_schedule"] = ""
+
+            self.pack_options = [pack for pack in metadata_json["packs"]]
+            if self.pack_options != []:
+                self.sub_items = {
+                    opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
+                    for opt in self.pack_options
+                }
+                self.change_schedule_pack.clear()
+                for item in self.sub_items.values():
+                    if item.title in self.config["enabled_packs"]:
+                        item.state = True
+                    self.change_schedule_pack.add(item)
+            else:
+                self.change_schedule_pack.clear()
+                self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
         self.config_handler.save_config()
 
