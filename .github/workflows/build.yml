@@ -61,7 +61,7 @@ jobs:
       if: github.ref_type == 'tag'
       with:
         files: |
-          dist/MenuBarSchedule.app/
+          dist/MenuBarSchedule.app.zip
           dist/schedules.zip
           schedules/schedule_version.txt
       env:
