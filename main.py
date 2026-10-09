@@ -266,13 +266,12 @@ class Updater():
             cancel=True
         )
         if not download_schedules:
-            return
+            return False
 
         session = requests.Session()
         releases = get_releases(session)
 
-        if not self.install_schedules_core(session, releases, False):
-            return
+        return self.install_schedules_core(session, releases, False)
 
 class MenuBarSchedule(rumps.App):
     def __init__(self, config, updater):
@@ -377,9 +376,8 @@ class MenuBarSchedule(rumps.App):
                 if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
                     if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedules:
                         self.config["selected_schedule"] = self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
-                else:
-                    if self.calendar["default"] in self.schedules:
-                        self.config["selected_schedule"] = self.calendar["default"]
+                elif self.calendar["default"] in self.schedules:
+                    self.config["selected_schedule"] = self.calendar["default"]
 
                 self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
                 if self.schedule_options != []:
@@ -459,7 +457,10 @@ class MenuBarSchedule(rumps.App):
             self.change_schedule_pack.clear()
             self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
-            self.updater.install_schedules()
+            if not self.updater.install_schedules():
+                self.config["selected_schedule"] = ""
+                self.config["enabled_packs"] = []
+                self.config_handler.save_config()
 
         if schedule_path.exists():
             metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
