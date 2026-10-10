@@ -10,7 +10,7 @@ lazy import requests
 lazy import shutil
 lazy import subprocess
 
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -134,8 +134,7 @@ class Updater():
                     if Path("/Applications/MenuBarSchedule.app").exists():
                         shutil.rmtree("/Applications/MenuBarSchedule.app")
                     try:
-                        with zipfile.ZipFile("MenuBarSchedule.app.zip", 'r') as zip_ref:
-                            zip_ref.extractall("/Applications/")
+                        subprocess.run(["unzip", "-oq", "MenuBarSchedule.app.zip", "-d", "/Applications"])
                         subprocess.run(["chmod", "+x", "/Applications/MenuBarSchedule.app/Contents/MacOS/MenuBarSchedule"])
                         subprocess.run(["xattr", "-dr", "com.apple.quarantine", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])

@@ -1,3 +1,6 @@
+# NOTE: This build script is deprecated as new releases are built using GitHub Actions.
+# It won't be used to generate new release binaries anymore, and may be removed at any time.
+
 """
 Menu Bar Schedule Release Build Tool
 Derived from the RoSniper Release Build Tool
