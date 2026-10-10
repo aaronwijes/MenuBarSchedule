@@ -17,7 +17,8 @@ Menu Bar Schedule shows how much time is left until your next class starts/ends.
 * Automatically set the correct schedule with a calendar (may not work with all schedule packs)
 
 ## Building From Source
-There is a build script at `build.py` which can be used to build the app.<br>
-Make sure you have installed all of the modules in `requirements.txt` and have ~100MB of free space.
+Install Python 3.15.x and install all of the modules in requirements.txt.<br>
+Then, build the app using PyInstaller: `pyinstaller ./resources/MenuBarSchedule.spec`
 
-To test your own schedule packs, make your changes and move the `/schedules` directory to `/Users/USERNAME/Library/Application Support/MenuBarSchedule/schedules`.
+To test your own schedule packs, make your changes and move the `/schedules` directory to `~/Library/Application Support/MenuBarSchedule/schedules`.<br>
+You can reload schedule packs without restarting the app by clicking *Settings > Refresh Schedules from JSON*.
