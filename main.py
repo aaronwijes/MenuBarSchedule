@@ -10,7 +10,7 @@ lazy import requests
 lazy import shutil
 lazy import subprocess
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
