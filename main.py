@@ -11,7 +11,7 @@ lazy import requests
 lazy import shutil
 lazy import subprocess
 
-VERSION = "3.0.0"
+VERSION = "3.0.1"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -156,6 +156,11 @@ class Config():
     def remove_enabled_pack(self, pack_name):
         cursor = self.conn.cursor()
         cursor.execute(f"DELETE FROM enabled_packs WHERE name = ?;", [pack_name])
+        self.conn.commit()
+
+    def remove_all_enabled_packs(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"DELETE FROM enabled_packs")
         self.conn.commit()
 
     def query_enabled_pack(self, pack_name):
