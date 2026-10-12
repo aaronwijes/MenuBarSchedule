@@ -3,7 +3,7 @@ import rumps
 lazy import requests
 from datetime import datetime, timedelta
 from pathlib import Path
-from database import Config
+from database import Database
 from updater import Updater
 
 VERSION = "3.1.0"
@@ -61,12 +61,12 @@ def download_file(session, url):
         return False
 
 class MenuBarSchedule(rumps.App):
-    def __init__(self, config: Config, updater: Updater):
+    def __init__(self, database: Database, updater: Updater):
         super().__init__(
             name="Menu Bar Schedule",
             title=""
         )
-        self.config = config
+        self.database = database
         self.updater = updater
         self.calendar = None
 
@@ -96,7 +96,7 @@ class MenuBarSchedule(rumps.App):
         }
         for id, item in self.settings_items.items():
             if not "NO_CONFIG" in id:
-                item.state = self.config.fetch_value(id)
+                item.state = self.database.fetch_value(id)
             self.settings.add(item)
 
         self.menu = [
@@ -116,35 +116,35 @@ class MenuBarSchedule(rumps.App):
         self.timer = rumps.Timer(self.update_time_left, interval=1.0)
         self.timer.start()
 
-        if self.config.fetch_value("check_app_updates_on_startup"):
+        if self.database.fetch_value("check_app_updates_on_startup"):
             self.updater.update_app(False)
-        elif self.config.fetch_value("check_schedule_updates_on_startup"):
+        elif self.database.fetch_value("check_schedule_updates_on_startup"):
             self.updater.update_schedules(False)
 
     def select_option_schedule(self, sender):
-        if self.config.fetch_value("selected_schedule") != "":
-            pack_id = self.config.get_online_pack_id(self.config.fetch_value("selected_online_pack"))
-            schedule_id = [id for id, name in self.schedule_options.items() if name == self.config.fetch_value("selected_schedule")][0]
+        if self.database.fetch_value("selected_schedule") != "":
+            pack_id = self.database.get_online_pack_id(self.database.fetch_value("selected_online_pack"))
+            schedule_id = self.database.get_online_schedule_id(pack_id, self.database.fetch_value("selected_schedule"))
             self.schedule_items[schedule_id].state = False
-        pack_id = self.config.get_online_pack_id(self.config.fetch_value("selected_online_pack"))
-        schedule_id = [id for id, name in self.schedule_options.items() if name == sender.title][0]
-        self.current_schedule = self.config.get_schedule_from_os_pack(pack_id, schedule_id)
-        self.config.set_value("selected_schedule", sender.title)
+        pack_id = self.database.get_online_pack_id(self.database.fetch_value("selected_online_pack"))
+        schedule_id = self.database.get_online_schedule_id(pack_id, sender.title)
+        self.current_schedule = self.database.get_schedule_from_os_pack(pack_id, schedule_id)
+        self.database.set_value("selected_schedule", sender.title)
         sender.state = True
 
     def select_option_pack(self, sender):
-        selected_online_pack = self.config.fetch_value("selected_online_pack")
+        selected_online_pack = self.database.fetch_value("selected_online_pack")
         if selected_online_pack == sender.title:
-            pack_id = self.config.get_online_pack_id(selected_online_pack)
+            pack_id = self.database.get_online_pack_id(selected_online_pack)
             self.pack_items[pack_id].state = False
-            self.config.set_value("selected_schedule", "")
-            self.config.set_value("selected_online_pack", "")
+            self.database.set_value("selected_schedule", "")
+            self.database.set_value("selected_online_pack", "")
         elif selected_online_pack != "":
-            pack_id = self.config.get_online_pack_id(selected_online_pack)
+            pack_id = self.database.get_online_pack_id(selected_online_pack)
             self.pack_items[pack_id].state = False
-            self.config.set_value("selected_online_pack", sender.title)
+            self.database.set_value("selected_online_pack", sender.title)
         else:
-            self.config.set_value("selected_online_pack", sender.title)
+            self.database.set_value("selected_online_pack", sender.title)
         self.refresh_schedules(None)
 
     def toggle_settings(self, sender):
@@ -158,8 +158,8 @@ class MenuBarSchedule(rumps.App):
         }
         if sender.title in cfg_lookup:
             config_key = cfg_lookup[sender.title]
-            new_key_value = not self.config.fetch_value(config_key)
-            self.config.set_value(config_key, new_key_value)
+            new_key_value = not self.database.fetch_value(config_key)
+            self.database.set_value(config_key, new_key_value)
             sender.state = new_key_value
 
         if sender.title == "Set Schedule Based on Calendar":
@@ -169,31 +169,31 @@ class MenuBarSchedule(rumps.App):
         now = datetime.now()
         found_period = False
 
-        if self.config.fetch_value("set_schedule_based_on_calendar"):
+        if self.database.fetch_value("set_schedule_based_on_calendar"):
             if self.calendar != None:
                 if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
                     if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedules:
-                        self.config.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
+                        self.database.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
                 elif self.calendar["default"] in self.schedules:
-                    self.config.set_value("selected_schedule", self.calendar["default"])
+                    self.database.set_value("selected_schedule", self.calendar["default"])
 
                 self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
                 if self.schedule_options != []:
                     self.sub_items = {
-                        opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.config.fetch_value("set_schedule_based_on_calendar") else None)
+                        opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.database.fetch_value("set_schedule_based_on_calendar") else None)
                         for opt in self.schedule_options
                     }
 
-                    if self.config.fetch_value("selected_schedule") not in self.schedule_options:
-                        self.config.set_value("selected_schedule", "")
-                    if self.config.fetch_value("selected_schedule") != "":
-                        self.sub_items[self.config.fetch_value("selected_schedule")].state = True
+                    if self.database.fetch_value("selected_schedule") not in self.schedule_options:
+                        self.database.set_value("selected_schedule", "")
+                    if self.database.fetch_value("selected_schedule") != "":
+                        self.sub_items[self.database.fetch_value("selected_schedule")].state = True
 
                     self.change_schedule.clear()
                     for item in self.sub_items.values():
                         self.change_schedule.add(item)
 
-        if self.config.fetch_value("selected_schedule") == "":
+        if self.database.fetch_value("selected_schedule") == "":
             if self.title != "No Schedule":
                 self.title = "No Schedule"
             return
@@ -219,12 +219,12 @@ class MenuBarSchedule(rumps.App):
 
             if time_until_start > 0:
                 found_period = True
-                proposed_title = get_title(self.config, "start", period_id, time_until_start)
+                proposed_title = get_title(self.database, "start", period_id, time_until_start)
                 break
             elif time_until_end > 0:
                 found_period = True
-                proposed_title = get_title(self.config, "end", period_id, time_until_end)
-                if self.config.fetch_value("show_almost_end_notifs") and time_until_end <= 300 and self.last_notified_period != period_id:
+                proposed_title = get_title(self.database, "end", period_id, time_until_end)
+                if self.database.fetch_value("show_almost_end_notifs") and time_until_end <= 300 and self.last_notified_period != period_id:
                     rumps.notification(title="Menu Bar Schedule", subtitle="", message=f"{period["name"]} is ending in five minutes ({period["end"]}).", sound=False)
                     self.last_notified_period = period_id
                 break
@@ -238,7 +238,7 @@ class MenuBarSchedule(rumps.App):
                 minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute
             )
             time_until_start = round((start - now).total_seconds())
-            proposed_title = get_title(self.config, "start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
+            proposed_title = get_title(self.database, "start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
 
         if self.title != proposed_title:
             self.title = proposed_title
@@ -246,7 +246,7 @@ class MenuBarSchedule(rumps.App):
     def refresh_schedules(self, sender):
         self.schedules = {}
 
-        schedule_path = Path(self.config.config_dir) / "schedules"
+        schedule_path = Path(self.database.database_dir) / "schedules"
         if not schedule_path.exists():
             self.change_schedule.clear()
             self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
@@ -255,22 +255,22 @@ class MenuBarSchedule(rumps.App):
             self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
             if not self.updater.install_schedules():
-                self.config.set_value("selected_schedule", "")
-                self.config.set_value("selected_online_pack", "")
+                self.database.set_value("selected_schedule", "")
+                self.database.set_value("selected_online_pack", "")
 
         if schedule_path.exists():
-            self.config.convert_schedule_jsons_to_sql()
+            self.database.convert_schedule_jsons_to_sql()
 
-            metadata = Path(self.config.config_dir) / "schedules" / "metadata.json"
+            metadata = Path(self.database.database_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
             for pack in metadata_json["packs"]:
-                calendar_path = Path(self.config.config_dir) / "schedules" / pack["id"] / "calendar.json"
+                calendar_path = Path(self.database.database_dir) / "schedules" / pack["id"] / "calendar.json"
                 if calendar_path.exists():
                     self.calendar = json.loads((calendar_path.read_text()))
                 else:
                     self.calendar = None
 
-            self.packs = self.config.get_all_online_schedule_packs()
+            self.packs = self.database.get_all_online_schedule_packs()
             self.pack_options = {id: name for id, name in self.packs.items()}
             if self.pack_options != {}:
                 self.pack_items = {
@@ -278,10 +278,10 @@ class MenuBarSchedule(rumps.App):
                     for id, name in self.pack_options.items()
                 }
 
-                if self.config.fetch_value("selected_online_pack") not in self.pack_options.values():
-                    self.config.set_value("selected_online_pack", "")
-                if self.config.fetch_value("selected_online_pack") != "":
-                    pack_id = [id for id, name in self.pack_options.items() if name == self.config.fetch_value("selected_online_pack")][0]
+                if self.database.fetch_value("selected_online_pack") not in self.pack_options.values():
+                    self.database.set_value("selected_online_pack", "")
+                if self.database.fetch_value("selected_online_pack") != "":
+                    pack_id = [id for id, name in self.pack_options.items() if name == self.database.fetch_value("selected_online_pack")][0]
                     self.pack_items[pack_id].state = True
                 
                 self.change_schedule_pack.clear()
@@ -291,20 +291,20 @@ class MenuBarSchedule(rumps.App):
                 self.change_schedule_pack.clear()
                 self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
-            self.schedule_options = self.config.get_all_online_schedules()
+            self.schedule_options = self.database.get_all_online_schedules()
             if self.schedule_options != {}:
                 self.schedule_items = {
-                    id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not self.config.fetch_value("set_schedule_based_on_calendar") else None)
+                    id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not self.database.fetch_value("set_schedule_based_on_calendar") else None)
                     for id, name in self.schedule_options.items()
                 }
 
-                if self.config.fetch_value("selected_schedule") not in self.schedule_options.values():
-                    self.config.set_value("selected_schedule", "")
-                if self.config.fetch_value("selected_schedule") != "":
-                    pack_id = self.config.get_online_pack_id(self.config.fetch_value("selected_online_pack"))
-                    schedule_id = [id for id, name in self.schedule_options.items() if name == self.config.fetch_value("selected_schedule")][0]
+                if self.database.fetch_value("selected_schedule") not in self.schedule_options.values():
+                    self.database.set_value("selected_schedule", "")
+                if self.database.fetch_value("selected_schedule") != "":
+                    pack_id = self.database.get_online_pack_id(self.database.fetch_value("selected_online_pack"))
+                    schedule_id = [id for id, name in self.schedule_options.items() if name == self.database.fetch_value("selected_schedule")][0]
                     self.schedule_items[schedule_id].state = True
-                    self.current_schedule = self.config.get_schedule_from_os_pack(pack_id, schedule_id)
+                    self.current_schedule = self.database.get_schedule_from_os_pack(pack_id, schedule_id)
 
                 self.change_schedule.clear()
                 for item in self.schedule_items.values():
@@ -312,16 +312,16 @@ class MenuBarSchedule(rumps.App):
             else:
                 self.change_schedule.clear()
                 self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
-                self.config.set_value("selected_schedule", "")
+                self.database.set_value("selected_schedule", "")
 
     @rumps.clicked("View Current Schedule")
     def view_schedule(self, sender):
-        if self.config.fetch_value("selected_schedule") != "":
+        if self.database.fetch_value("selected_schedule") != "":
             message = ""
-            for period in self.schedules[self.config.fetch_value("selected_schedule")]["schedule"].values():
+            for period in self.schedules[self.database.fetch_value("selected_schedule")]["schedule"].values():
                 message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
             rumps.alert(
-                title=self.schedules[self.config.fetch_value("selected_schedule")]["name"],
+                title=self.schedules[self.database.fetch_value("selected_schedule")]["name"],
                 message=message
             )
         else:
@@ -347,7 +347,7 @@ class MenuBarSchedule(rumps.App):
         )
 
 if __name__ == "__main__":
-    config = Config()
-    updater = Updater(config)
-    MenuBarSchedule(config, updater).run()
-    config.conn.close()
+    database = Database()
+    updater = Updater(database)
+    MenuBarSchedule(database, updater).run()
+    database.conn.close()

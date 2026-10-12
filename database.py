@@ -11,11 +11,11 @@ VERSION_LIST = [int(component) for component in VERSION.split(".")]
 REPO_NAME = "MenuBarSchedule"
 GITHUB_USERNAME = "aaronwijes"
 
-class Config():
+class Database():
     def __init__(self):
-        self.config_dir = Path(user_config_dir(REPO_NAME, GITHUB_USERNAME))
-        self.config_dir.mkdir(parents=True, exist_ok=True)
-        self.config_path = f"{self.config_dir}/data.db"
+        self.database_dir = Path(user_config_dir(REPO_NAME, GITHUB_USERNAME))
+        self.database_dir.mkdir(parents=True, exist_ok=True)
+        self.database_path = f"{self.database_dir}/data.db"
         
         self.default_config = {
             "config_version": 1,
@@ -29,7 +29,7 @@ class Config():
             "selected_online_pack": ""
         }
 
-        os.chdir(self.config_dir)
+        os.chdir(self.database_dir)
         self.conn = sqlite3.connect("data.db")
         self.conn.row_factory = sqlite3.Row
         cursor = self.conn.cursor()
@@ -50,6 +50,7 @@ class Config():
                 period_name TEXT,
                 start_time TEXT,
                 end_time TEXT,
+                schedule_format_version INT DEFAULT 1,
                 PRIMARY KEY (pack_id, schedule_id, period_id)
             );
         """)
@@ -58,7 +59,8 @@ class Config():
             CREATE TABLE IF NOT EXISTS schedule_packs (
                 pack_id TEXT PRIMARY KEY,
                 pack_name TEXT,
-                pack_version INT
+                pack_version INT,
+                schedule_format_version INT DEFAULT 1
             );
         """)
 
@@ -143,6 +145,18 @@ class Config():
             return ""
         return rows[0]["pack_id"]
 
+    def get_online_schedule_id(self, pack_id, schedule_name):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT schedule_id FROM online_schedules
+            WHERE pack_id = ?
+            AND schedule_name = ?;
+        """, [pack_id, schedule_name])
+        rows = cursor.fetchall()
+        if len(rows) == 0:
+            return ""
+        return rows[0]["schedule_id"]
+
     def get_schedule_from_os_pack(self, pack_id, schedule_id):
         cursor = self.conn.cursor()
         cursor.execute(f"""
@@ -183,13 +197,13 @@ class Config():
         return schedules
 
     def convert_schedule_jsons_to_sql(self):
-        schedule_path = Path(self.config_dir) / "schedules"
+        schedule_path = Path(self.database_dir) / "schedules"
         if schedule_path.exists():
-            metadata = Path(self.config_dir) / "schedules" / "metadata.json"
+            metadata = Path(self.database_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
             for pack in metadata_json["packs"]:
                 self.add_online_schedule_pack(pack["id"], pack["name"], pack["version"])
-                schedule_path = Path(self.config_dir) / "schedules" / pack["id"] / "json"
+                schedule_path = Path(self.database_dir) / "schedules" / pack["id"] / "json"
                 for schedule_json in schedule_path.glob("*.json"):
                     schedule = json.loads((schedule_json.read_text()))
                     for period_id, period in schedule["schedule"].items():
