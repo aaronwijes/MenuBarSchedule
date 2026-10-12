@@ -17,12 +17,7 @@ CREATE TABLE IF NOT EXISTS online_schedules (
 );
 
 CREATE TABLE IF NOT EXISTS schedule_packs (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    version INT
-);
-
-CREATE TABLE IF NOT EXISTS enabled_packs (
-    id TEXT PRIMARY KEY,
-    name TEXT
+    pack_id TEXT PRIMARY KEY,
+    pack_name TEXT,
+    pack_version INT
 );
