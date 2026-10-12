@@ -1,0 +1,28 @@
+Schema for the SQLite rewrite
+
+CREATE TABLE IF NOT EXISTS config (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS online_schedules (
+    pack_id TEXT,
+    schedule_id TEXT,
+    schedule_name TEXT,
+    period_id TEXT,
+    period_name TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    PRIMARY KEY (pack_id, schedule_id, period_id)
+);
+
+CREATE TABLE IF NOT EXISTS schedule_packs (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    version INT
+);
+
+CREATE TABLE IF NOT EXISTS enabled_packs (
+    id TEXT PRIMARY KEY,
+    name TEXT
+);

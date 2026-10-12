@@ -1,3 +1,7 @@
+# Currently broken right now! This file will be fixed soon :)
+# Sorry for any inconvenience to those trying to run this from source!!
+# There's a lot of things that need to be rewritten and thought out more.
+
 import os
 import json
 import rumps
@@ -11,7 +15,7 @@ lazy import requests
 lazy import shutil
 lazy import subprocess
 
-VERSION = "3.0.1"
+VERSION = "3.1.0"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
@@ -94,12 +98,6 @@ class Config():
         """)
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS enabled_packs (
-                name TEXT PRIMARY KEY
-            );
-        """)
-
-        cursor.execute("""
             CREATE TABLE IF NOT EXISTS online_schedules (
                 pack_id TEXT,
                 schedule_id TEXT,
@@ -108,7 +106,7 @@ class Config():
                 period_name TEXT,
                 start_time TEXT,
                 end_time TEXT,
-                PRIMARY KEY (pack_id, schedule_id)
+                PRIMARY KEY (pack_id, schedule_id, period_id)
             );
         """)
 
@@ -117,6 +115,13 @@ class Config():
                 pack_id TEXT PRIMARY KEY,
                 pack_name TEXT,
                 pack_version INT
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS enabled_packs (
+                id TEXT PRIMARY KEY,
+                name TEXT
             );
         """)
 
@@ -129,7 +134,9 @@ class Config():
     def fetch_value(self, key):
         cursor = self.conn.cursor()
         cursor.execute(f"SELECT value FROM config WHERE key = ?", [key])
-        value = cursor.fetchall()[0][0]
+        value = cursor.fetchall()
+        # print(key, value)
+        value = value[0][0]
         if key != "selected_schedule":
             return int(value)
         else:
@@ -150,7 +157,8 @@ class Config():
 
     def add_enabled_pack(self, pack_name):
         cursor = self.conn.cursor()
-        cursor.execute(f"INSERT INTO enabled_packs (name) VALUES (?) ON CONFLICT DO NOTHING;", [pack_name])
+        pack_id = self.get_online_pack_id(pack_name)
+        cursor.execute(f"INSERT INTO enabled_packs (id, name) VALUES (?, ?) ON CONFLICT DO NOTHING;", [pack_id, pack_name])
         self.conn.commit()
 
     def remove_enabled_pack(self, pack_name):
@@ -160,7 +168,7 @@ class Config():
 
     def remove_all_enabled_packs(self):
         cursor = self.conn.cursor()
-        cursor.execute(f"DELETE FROM enabled_packs")
+        cursor.execute(f"DELETE FROM enabled_packs;")
         self.conn.commit()
 
     def query_enabled_pack(self, pack_name):
@@ -168,6 +176,104 @@ class Config():
         cursor.execute(f"SELECT * FROM enabled_packs WHERE name=?;", [pack_name])
         return len(cursor.fetchall()) > 0
 
+    def add_online_schedule(self, pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT DO NOTHING;
+        """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time])
+        self.conn.commit()
+
+    def add_online_schedule_pack(self, pack_id, pack_name, pack_version):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            INSERT INTO schedule_packs (pack_id, pack_name, pack_version)
+            VALUES (?, ?, ?)
+            ON CONFLICT DO NOTHING;
+        """, [pack_id, pack_name, pack_version])
+        self.conn.commit()
+
+    def remove_online_schedule_pack(self, pack_id):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            DELETE FROM online_schedules
+            WHERE pack_id = ?
+        """, [pack_id])
+        self.conn.commit()
+
+    def get_all_online_schedule_packs(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"SELECT * FROM schedule_packs;")
+        rows = cursor.fetchall()
+
+        packs = {}
+        for row in rows:
+            packs[row[0]] = row[1]
+
+        return packs
+
+    def get_online_pack_id(self, pack_name):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT pack_id FROM schedule_packs
+            WHERE pack_name = ?;
+        """, [pack_name])
+        return cursor.fetchall()[0][0]
+
+    def get_schedule_from_os_pack(self, pack_id, schedule_id):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT * FROM online_schedules
+            WHERE pack_id = ?
+            AND schedule_id = ?;
+        """, [pack_id, schedule_id])
+
+        periods = cursor.fetchall()
+        schedule = {"name": periods[0][2], "schedule_id": periods[0][1], "pack_id": periods[0][0], "schedule": {}}
+        print(schedule)
+        for period in periods:
+            schedule["schedule"][period[3]] = {
+                "start": period[5],
+                "end": period[6],
+                "parsed_start": datetime.strptime(period[5], "%I:%M %p"),
+                "parsed_end": datetime.strptime(period[6], "%I:%M %p"),
+                "name": period[4]
+            }
+
+        return schedule
+
+    def get_all_online_schedules(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT schedule_id, schedule_name
+            FROM online_schedules os
+            INNER JOIN enabled_packs ep
+                ON ep.id = os.pack_id;
+        """)
+        rows = set(cursor.fetchall())
+
+        schedules = {}
+        for row in rows:
+            schedules[row[0]] = row[1]
+
+        return schedules
+
+    def convert_schedule_jsons_to_sql(self):
+        schedule_path = Path(self.config_dir) / "schedules"
+        if schedule_path.exists():
+            metadata = Path(self.config_dir) / "schedules" / "metadata.json"
+            metadata_json = json.loads(metadata.read_text())
+            for pack in metadata_json["packs"]:
+                self.add_online_schedule_pack(pack["id"], pack["name"], pack["version"])
+                schedule_path = Path(self.config_dir) / "schedules" / pack["id"] / "json"
+                for schedule_json in schedule_path.glob("*.json"):
+                    schedule = json.loads((schedule_json.read_text()))
+                    for period_id, period in schedule["schedule"].items():
+                        period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
+                        period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
+                        self.add_online_schedule(pack["id"], Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"])
+                        
 class Updater():
     def __init__(self, config):
         self.config_handler = config
@@ -341,7 +447,7 @@ class Updater():
         return self.install_schedules_core(session, releases, False)
 
 class MenuBarSchedule(rumps.App):
-    def __init__(self, config, updater):
+    def __init__(self, config: Config, updater: Updater):
         super().__init__(
             name="Menu Bar Schedule",
             title=""
@@ -353,6 +459,7 @@ class MenuBarSchedule(rumps.App):
 
         self.sub_items = {}
         self.schedules = {}
+        self.current_schedule = {}
 
         self.change_schedule = rumps.MenuItem(title="Change Schedule")
         self.change_schedule.add(rumps.MenuItem("Loading..."))
@@ -404,6 +511,7 @@ class MenuBarSchedule(rumps.App):
     def select_option_schedule(self, sender):
         if self.config.fetch_value("selected_schedule") != "":
             self.schedule_items[self.config.fetch_value("selected_schedule")].state = False
+            self.current_schedule = self.config.get_schedule_from_os_pack(self.config.get_online_pack_id(sender.title), [id for id, name in self.schedule_options.items() if name == sender.title][0])
         self.config.set_value("selected_schedule", sender.title)
         sender.state = True
 
@@ -466,8 +574,7 @@ class MenuBarSchedule(rumps.App):
             return
 
         proposed_title = ""
-        selected_schedule = self.schedules[self.config.fetch_value("selected_schedule")]
-        for period_id, period in selected_schedule["schedule"].items():
+        for period_id, period in self.current_schedule["schedule"].items():
             start = datetime(
                 year=now.year,
                 month=now.month,
@@ -502,11 +609,11 @@ class MenuBarSchedule(rumps.App):
                 year=tomorrow.year,
                 month=tomorrow.month,
                 day=tomorrow.day,
-                hour=list(selected_schedule["schedule"].values())[0]["parsed_start"].hour,
-                minute=list(selected_schedule["schedule"].values())[0]["parsed_start"].minute
+                hour=list(self.current_schedule["schedule"].values())[0]["parsed_start"].hour,
+                minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute
             )
             time_until_start = round((start - now).total_seconds())
-            proposed_title = get_title(self.config, "start", list(selected_schedule["schedule"].keys())[0], time_until_start)
+            proposed_title = get_title(self.config, "start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
 
         if self.title != proposed_title:
             self.title = proposed_title
@@ -527,35 +634,30 @@ class MenuBarSchedule(rumps.App):
                 self.config.remove_all_enabled_packs()
 
         if schedule_path.exists():
+            self.config.convert_schedule_jsons_to_sql()
+
             metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
             for pack in metadata_json["packs"]:
-                if self.config.query_enabled_pack(pack["name"]):
-                    schedule_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "json"
-                    for schedule_json in schedule_path.glob("*.json"):
-                        schedule = json.loads((schedule_json.read_text()))
-                        for period in schedule["schedule"].values():
-                            period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
-                            period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
-                        self.schedules[schedule["name"]] = schedule
+                calendar_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "calendar.json"
+                if calendar_path.exists():
+                    self.calendar = json.loads((calendar_path.read_text()))
+                else:
+                    self.calendar = None
 
-                    calendar_path = Path(self.config_handler.config_dir) / "schedules" / pack["id"] / "calendar.json"
-                    if calendar_path.exists():
-                        self.calendar = json.loads((calendar_path.read_text()))
-                    else:
-                        self.calendar = None
-
-            self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
-            if self.schedule_options != []:
+            self.schedule_options = self.config.get_all_online_schedules()
+            if self.schedule_options != {}:
                 self.schedule_items = {
-                    opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.config.fetch_value("set_schedule_based_on_calendar") else None)
-                    for opt in self.schedule_options
+                    id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not self.config.fetch_value("set_schedule_based_on_calendar") else None)
+                    for id, name in self.schedule_options.items()
                 }
 
-                if self.config.fetch_value("selected_schedule") not in self.schedule_options:
+                if self.config.fetch_value("selected_schedule") not in self.schedule_options.values():
                     self.config.set_value("selected_schedule", "")
                 if self.config.fetch_value("selected_schedule") != "":
-                    self.schedule_items[self.config.fetch_value("selected_schedule")].state = True
+                    schedule_id = [id for id, name in self.schedule_options.items() if name == self.config.fetch_value("selected_schedule")][0]
+                    self.schedule_items[schedule_id].state = True
+                    self.current_schedule = self.config.get_schedule_from_os_pack(self.config.get_online_pack_id(sender.title), schedule_id)
 
                 self.change_schedule.clear()
                 for item in self.schedule_items.values():
@@ -565,11 +667,12 @@ class MenuBarSchedule(rumps.App):
                 self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
                 self.config.set_value("selected_schedule", "")
 
-            self.pack_options = [pack for pack in metadata_json["packs"]]
-            if self.pack_options != []:
+            self.packs = self.config.get_all_online_schedule_packs()
+            self.pack_options = {id: name for id, name in self.packs.items()}
+            if self.pack_options != {}:
                 self.pack_items = {
-                    opt["name"]: rumps.MenuItem(title=opt["name"], callback=self.select_option_pack)
-                    for opt in self.pack_options
+                    id: rumps.MenuItem(title=name, callback=self.select_option_pack)
+                    for id, name in self.pack_options.items()
                 }
                 self.change_schedule_pack.clear()
                 for item in self.pack_items.values():
