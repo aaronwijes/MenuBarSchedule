@@ -180,7 +180,7 @@ class MenuBarSchedule(rumps.App):
                 self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
                 if self.schedule_options != []:
                     self.sub_items = {
-                        opt: rumps.MenuItem(title=opt, callback=self.select_option_schedule if not self.database.fetch_value("set_schedule_based_on_calendar") else None)
+                        opt: rumps.MenuItem(title=opt, callback=None)
                         for opt in self.schedule_options
                     }
 
