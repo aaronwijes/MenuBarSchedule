@@ -1,3 +1,4 @@
+import sys
 import json
 import rumps
 import zipfile
@@ -76,10 +77,14 @@ class Updater():
                         subprocess.run(["chmod", "+x", "/Applications/MenuBarSchedule.app/Contents/MacOS/MenuBarSchedule"])
                         subprocess.run(["xattr", "-dr", "com.apple.quarantine", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
-                        rumps.alert(
+                        if rumps.alert(
                             title="Update Successful",
-                            message="Successfully installed the update!\nRestart Menu Bar Schedule to finish the update."
-                        )
+                            message="Successfully installed the update!\nRestart Menu Bar Schedule to finish the update.",
+                            ok="Restart Now",
+                            other="Later"
+                        ):
+                            subprocess.run(["open", "-n", "/Applications/MenuBarSchedule.app"])
+                            return 0
                     except:
                         subprocess.run(["rm", "-rf", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
