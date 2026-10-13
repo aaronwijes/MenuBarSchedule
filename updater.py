@@ -2,16 +2,11 @@ import json
 import rumps
 import zipfile
 from pathlib import Path
+from info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
 
 lazy import requests
 lazy import shutil
 lazy import subprocess
-
-VERSION = "3.1.0"
-VERSION_LIST = [int(component) for component in VERSION.split(".")]
-
-REPO_NAME = "MenuBarSchedule"
-GITHUB_USERNAME = "aaronwijes"
 
 def is_update(new_version_list):
     if new_version_list[0] > VERSION_LIST[0]:
@@ -44,8 +39,8 @@ def download_file(session, url):
         return False
 
 class Updater():
-    def __init__(self, config):
-        self.config_handler = config
+    def __init__(self, database):
+        self.database = database
 
     def update_app(self, show_alerts):
         try:
@@ -146,7 +141,7 @@ class Updater():
                 )
                 return False
 
-            metadata = Path(self.config_handler.config_dir) / "schedules" / "metadata.json"
+            metadata = Path(self.database.database_dir) / "schedules" / "metadata.json"
             if metadata.exists():
                 metadata_json = json.loads(metadata.read_text())
             else:

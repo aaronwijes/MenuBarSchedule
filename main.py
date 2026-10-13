@@ -1,27 +1,10 @@
 import json
 import rumps
-lazy import requests
 from datetime import datetime, timedelta
 from pathlib import Path
 from database import Database
 from updater import Updater
-
-VERSION = "3.1.0"
-VERSION_LIST = [int(component) for component in VERSION.split(".")]
-
-REPO_NAME = "MenuBarSchedule"
-GITHUB_USERNAME = "aaronwijes"
-
-def is_update(new_version_list):
-    if new_version_list[0] > VERSION_LIST[0]:
-        return True
-    elif new_version_list[0] == VERSION_LIST[0]:
-        if new_version_list[1] > VERSION_LIST[1]:
-            return True
-        elif new_version_list[1] == VERSION_LIST[1]:
-            if new_version_list[2] > VERSION_LIST[2]:
-                return True
-    return False
+from info import VERSION, GITHUB_USERNAME
 
 def get_title(config, timeframe, period, seconds):
     use_shorthand = config.fetch_value("use_shorthand")
@@ -40,25 +23,6 @@ def get_title(config, timeframe, period, seconds):
         title = f"{prefix}{seconds % 60}s"
 
     return title
-
-def get_releases(session):
-    releases_req = session.get(f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/releases")
-    if not releases_req.ok:
-        rumps.alert(
-            title="Connection Error",
-            message="Couldn't connect to GitHub Releases."
-        )
-        return
-    return releases_req.json()
-
-def download_file(session, url):
-    try:
-        file_request = session.get(url)
-        if not file_request.ok:
-            raise requests.exceptions.ConnectionError
-        return file_request.content
-    except requests.exceptions.ConnectionError:
-        return False
 
 class MenuBarSchedule(rumps.App):
     def __init__(self, database: Database, updater: Updater):
@@ -174,7 +138,7 @@ class MenuBarSchedule(rumps.App):
                 if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
                     if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedules:
                         self.database.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
-                elif self.calendar["default"] in self.schedules:
+                elif self.calendar["default"] in self.schedule_items.values():
                     self.database.set_value("selected_schedule", self.calendar["default"])
 
                 self.schedule_options = sorted([schedule["name"] for schedule in self.schedules.values()])
