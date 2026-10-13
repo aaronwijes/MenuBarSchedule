@@ -2,9 +2,9 @@ import json
 import rumps
 from datetime import datetime, timedelta
 from pathlib import Path
-from database import Database
-from updater import Updater
-from info import VERSION, GITHUB_USERNAME
+from modules.database import Database
+from modules.updater import Updater
+from modules.info import VERSION, GITHUB_USERNAME
 
 def get_title(config, timeframe, period, seconds):
     use_shorthand = config.fetch_value("use_shorthand")

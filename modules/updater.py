@@ -2,7 +2,7 @@ import json
 import rumps
 import zipfile
 from pathlib import Path
-from info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
+from modules.info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
 
 lazy import requests
 lazy import shutil
