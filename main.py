@@ -82,7 +82,7 @@ class MenuBarSchedule(rumps.App):
         self.timer.start()
 
         if self.database.fetch_value("check_app_updates_on_startup"):
-            if self.updater.update_app(False) == 0:
+            if self.updater.update_app(False) == "restart":
                 rumps.quit_application()
         elif self.database.fetch_value("check_schedule_updates_on_startup"):
             self.updater.update_schedules(False)
@@ -298,7 +298,7 @@ class MenuBarSchedule(rumps.App):
 
     @rumps.clicked("Check for App Updates")
     def check_updates(self, sender):
-        if self.updater.update_app(True) == 0:
+        if self.updater.update_app(True) == "restart":
             rumps.quit_application()
 
     @rumps.clicked("Check for Schedule Updates")

@@ -81,10 +81,10 @@ class Updater():
                             title="Update Successful",
                             message="Successfully installed the update!\nRestart Menu Bar Schedule to finish the update.",
                             ok="Restart Now",
-                            other="Later"
-                        ):
+                            cancel="Later"
+                        ) == True:
                             subprocess.run(["open", "-n", "/Applications/MenuBarSchedule.app"])
-                            return 0
+                            return "restart"
                     except:
                         subprocess.run(["rm", "-rf", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
