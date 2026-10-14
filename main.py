@@ -316,7 +316,7 @@ class MenuBarSchedule(rumps.App):
     def about(self, sender):
         rumps.alert(
             title=f"About",
-            message=f"Menu Bar Schedule shows how much time is left until your next class!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/{GITHUB_USERNAME})"
+            message=f"Menu Bar Schedule shows how much time is left until your next class/event!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/{GITHUB_USERNAME})"
         )
 
 if __name__ == "__main__":

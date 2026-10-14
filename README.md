@@ -4,13 +4,13 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/aaronwijes/MenuBarSchedule)
 ![GitHub License](https://img.shields.io/github/license/aaronwijes/MenuBarSchedule)
 
-Menu Bar Schedule shows how much time is left until your next class starts/ends.
+Menu Bar Schedule shows how much time is left until your next class or event starts/ends.
 
 <img width="479" height="320" alt="Pasted 2026-10-09 at 9 54 32 PM" src="https://github.com/user-attachments/assets/24d86454-303b-473e-ba07-3ff8c24d8384" />
 
 ## Current Features
 * See how much time is left until your next class/event
-* Select between 10+ schedule variants
+* Select between 10+ schedule variants (Only [SITHS](https://siths.org) is included for now, but adding your own schedules is easy!)
 * See your schedule timetable in detail
 * Install schedule updates without updating the entire app
 * Check for updates on app startup
