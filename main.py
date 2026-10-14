@@ -1,4 +1,3 @@
-import sys
 import json
 import rumps
 from datetime import datetime, timedelta
