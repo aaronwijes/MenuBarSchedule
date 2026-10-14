@@ -256,8 +256,9 @@ class MenuBarSchedule(rumps.App):
 
             self.schedule_options = self.database.get_all_online_schedules()
             if self.schedule_options != {}:
+                set_schedule_based_on_calendar = self.database.fetch_value("set_schedule_based_on_calendar")
                 self.schedule_items = {
-                    id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not self.database.fetch_value("set_schedule_based_on_calendar") else None)
+                    id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not set_schedule_based_on_calendar else None)
                     for id, name in self.schedule_options.items()
                 }
 
@@ -273,8 +274,9 @@ class MenuBarSchedule(rumps.App):
                 if self.database.fetch_value("selected_schedule") not in self.schedule_options.values():
                     self.database.set_value("selected_schedule", "")
                 if self.database.fetch_value("selected_schedule") != "":
+                    selected_schedule = self.database.fetch_value("selected_schedule")
                     pack_id = self.database.get_online_pack_id(self.database.fetch_value("selected_online_pack"))
-                    schedule_id = [id for id, name in self.schedule_options.items() if name == self.database.fetch_value("selected_schedule")][0]
+                    schedule_id = [id for id, name in self.schedule_options.items() if name == selected_schedule][0]
                     self.schedule_items[schedule_id].state = True
                     self.current_schedule = self.database.get_schedule_from_os_pack(pack_id, schedule_id)
 
