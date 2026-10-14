@@ -61,7 +61,8 @@ class Updater():
             update = rumps.alert(
                 title="Update Available",
                 message=f"You can update to version {releases[0]["tag_name"]}.\nInstall the update?",
-                cancel=True
+                cancel=True,
+                ok="Update"
             )
             if not update:
                 return
@@ -160,8 +161,9 @@ class Updater():
             if is_schedule_update and is_app_version_same:
                 update = rumps.alert(
                     title="Schedule Updates Available",
-                    message=f"A schedule update was found.\nInstall the update?",
-                    cancel=True
+                    message=f"You can update to schedule version {latest_schedule_version}.\nInstall the update?",
+                    cancel=True,
+                    ok="Update"
                 )
                 if not update:
                     return False
@@ -174,8 +176,9 @@ class Updater():
             elif is_schedule_update and not is_app_version_same and not is_later_app_version:
                 continue_update = rumps.alert(
                     title="Schedule Updates Available",
-                    message=f"A schedule update was found, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
-                    cancel=True
+                    message=f"You can update to schedule version {latest_schedule_version}, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
+                    cancel=True,
+                    ok="Update"
                 )
                 if not continue_update:
                     return False
@@ -204,8 +207,9 @@ class Updater():
     def install_schedules(self):
         download_schedules = rumps.alert(
             title="Schedules Not Found",
-            message="Schedules are required for Menu Bar Schedule to function.\nDownload schedules?",
-            cancel=True
+            message="Schedules are required for Menu Bar Schedule to function.\nInstall schedules?",
+            cancel=True,
+            ok="Install"
         )
         if not download_schedules:
             return False
