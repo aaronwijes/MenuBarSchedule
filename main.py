@@ -284,10 +284,10 @@ class MenuBarSchedule(rumps.App):
     def view_schedule(self, sender):
         if self.database.fetch_value("selected_schedule") != "":
             message = ""
-            for period in self.schedules[self.database.fetch_value("selected_schedule")]["schedule"].values():
+            for period in self.current_schedule["schedule"].values():
                 message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
             rumps.alert(
-                title=self.schedules[self.database.fetch_value("selected_schedule")]["name"],
+                title=self.current_schedule["name"],
                 message=message
             )
         else:

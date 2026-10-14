@@ -1,5 +1,5 @@
 {
-  "name": "Evacuation Drill (9F)",
+  "name": "Evac/Lockdown Drill (8F)",
   "schedule": {
     "1": {
       "start": "8:00 AM",
@@ -41,15 +41,15 @@
       "end": "1:52 PM",
       "name": "Period 8"
     },
-    "9": {
-      "start": "1:56 PM",
-      "end": "2:36 PM",
-      "name": "Period 9"
+    "8F": {
+      "start": "1:52 PM",
+      "end": "2:02 PM",
+      "name": "Period 8F"
     },
-    "9F": {
-      "start": "2:36 PM",
+    "9": {
+      "start": "2:06 PM",
       "end": "2:47 PM",
-      "name": "Period 9F"
+      "name": "Period 9"
     }
   }
 }

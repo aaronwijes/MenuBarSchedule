@@ -102,7 +102,14 @@ class Database():
         cursor.execute(f"""
             INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT DO UPDATE SET
+                pack_id = excluded.pack_id,
+                schedule_id = excluded.schedule_id,
+                schedule_name = excluded.schedule_name,
+                period_id = excluded.period_id,
+                period_name = excluded.period_name,
+                start_time = excluded.start_time,
+                end_time = excluded.end_time;
         """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time])
         self.conn.commit()
 
@@ -111,7 +118,10 @@ class Database():
         cursor.execute(f"""
             INSERT INTO schedule_packs (pack_id, pack_name, pack_version)
             VALUES (?, ?, ?)
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT DO UPDATE SET
+                pack_id = excluded.pack_id,
+                pack_name = excluded.pack_name,
+                pack_version = excluded.pack_version;
         """, [pack_id, pack_name, pack_version])
         self.conn.commit()
 

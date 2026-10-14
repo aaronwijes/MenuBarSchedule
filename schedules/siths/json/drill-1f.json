@@ -1,50 +1,50 @@
 {
-  "name": "Evacuation Drill (8F)",
+  "name": "Evac/Lockdown Drill (1F)",
   "schedule": {
     "1": {
       "start": "8:00 AM",
       "end": "8:40 AM",
       "name": "Period 1"
     },
+    "1F": {
+      "start": "8:40 AM",
+      "end": "8:50 AM",
+      "name": "Period 1F"
+    },
     "2": {
-      "start": "8:44 AM",
-      "end": "9:24 AM",
+      "start": "8:53 AM",
+      "end": "9:33 AM",
       "name": "Period 2"
     },
     "3": {
-      "start": "9:28 AM",
-      "end": "10:12 AM",
+      "start": "9:37 AM",
+      "end": "10:22 AM",
       "name": "Period 3"
     },
     "4": {
-      "start": "10:16 AM",
-      "end": "10:56 AM",
+      "start": "10:26 AM",
+      "end": "11:06 AM",
       "name": "Period 4"
     },
     "5": {
-      "start": "11:00 AM",
-      "end": "11:40 AM",
+      "start": "11:10 AM",
+      "end": "11:50 AM",
       "name": "Period 5"
     },
     "6": {
-      "start": "11:44 AM",
-      "end": "12:24 PM",
+      "start": "11:54 AM",
+      "end": "12:34 PM",
       "name": "Period 6"
     },
     "7": {
-      "start": "12:28 PM",
-      "end": "1:08 PM",
+      "start": "12:38 PM",
+      "end": "1:18 PM",
       "name": "Period 7"
     },
     "8": {
-      "start": "1:12 PM",
-      "end": "1:52 PM",
-      "name": "Period 8"
-    },
-    "8F": {
-      "start": "1:52 PM",
+      "start": "1:22 PM",
       "end": "2:02 PM",
-      "name": "Period 8F"
+      "name": "Period 8"
     },
     "9": {
       "start": "2:06 PM",

@@ -1,5 +1,5 @@
 {
-  "name": "Evacuation Drill (7F)",
+  "name": "Evac/Lockdown Drill (2F)",
   "schedule": {
     "1": {
       "start": "8:00 AM",
@@ -11,35 +11,35 @@
       "end": "9:24 AM",
       "name": "Period 2"
     },
+    "2F": {
+      "start": "9:24 AM",
+      "end": "9:34 AM",
+      "name": "Period 2F"
+    },
     "3": {
-      "start": "9:28 AM",
-      "end": "10:13 AM",
+      "start": "9:37 AM",
+      "end": "10:22 AM",
       "name": "Period 3"
     },
     "4": {
-      "start": "10:17 AM",
-      "end": "10:57 AM",
+      "start": "10:26 AM",
+      "end": "11:06 AM",
       "name": "Period 4"
     },
     "5": {
-      "start": "11:01 AM",
-      "end": "11:41 AM",
+      "start": "11:10 AM",
+      "end": "11:50 AM",
       "name": "Period 5"
     },
     "6": {
-      "start": "11:45 AM",
-      "end": "12:25 PM",
+      "start": "11:54 AM",
+      "end": "12:34 PM",
       "name": "Period 6"
     },
     "7": {
-      "start": "12:29 PM",
-      "end": "1:09 PM",
+      "start": "12:38 PM",
+      "end": "1:18 PM",
       "name": "Period 7"
-    },
-    "7F": {
-      "start": "1:09 PM",
-      "end": "1:19 PM",
-      "name": "Period 7F"
     },
     "8": {
       "start": "1:22 PM",
