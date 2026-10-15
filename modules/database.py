@@ -156,7 +156,11 @@ class Database():
         cursor = self.conn.cursor()
         cursor.execute(f"""
             DELETE FROM online_schedules
-            WHERE pack_id = ?
+            WHERE pack_id = ?;
+        """, [pack_id])
+        cursor.execute(f"""
+            DELETE FROM schedule_packs
+            WHERE pack_id = ?;
         """, [pack_id])
         self.conn.commit()
 
@@ -262,6 +266,7 @@ class Database():
             metadata = Path(self.database_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
             for pack_id, pack_obj in metadata_json.items():
+                self.remove_online_schedule_pack(pack_id)
                 self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
                 schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
                 calendar_path = schedule_json_path / ".." / "calendar.json"
