@@ -1,6 +1,7 @@
 import json
 import rumps
 import zipfile
+from .database import Database
 from pathlib import Path
 from modules.info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
 
@@ -39,7 +40,7 @@ def download_file(session, url):
         return False
 
 class Updater():
-    def __init__(self, database):
+    def __init__(self, database: Database):
         self.database = database
 
     def update_app(self, show_alerts):
@@ -135,7 +136,7 @@ class Updater():
             for asset in releases[0]["assets"]:
                 if asset["name"] == "schedules.zip":
                     schedules_present = True
-                elif asset["name"] == "schedule_version.txt":
+                elif asset["name"] == "metadata.json":
                     schedules_metadata_present = True
                     schedules_metadata_url = asset["browser_download_url"]
 
@@ -146,21 +147,20 @@ class Updater():
                 )
                 return False
 
-            metadata = Path(self.database.database_dir) / "schedules" / "metadata.json"
-            if metadata.exists():
-                metadata_json = json.loads(metadata.read_text())
-            else:
-                metadata_json = {"version": 0}
+            saved_metadata_json = self.database.get_all_online_schedule_packs()
+            current_metadata_json = json.loads(download_file(session, schedules_metadata_url).decode())
 
-            latest_schedule_version = int(download_file(session, schedules_metadata_url).decode())
-            is_schedule_update = latest_schedule_version > metadata_json["version"]
+            is_schedule_update = False
             is_app_version_same = releases[0]["tag_name"] == VERSION
             is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
+            for id, metadata_obj in current_metadata_json.items():
+                if saved_metadata_json[id]["pack_version"] < current_metadata_json[id]["pack_version"]:
+                    is_schedule_update = True
 
             if is_schedule_update and is_app_version_same:
                 update = rumps.alert(
                     title="Schedule Updates Available",
-                    message=f"You can update to schedule version {latest_schedule_version}.\nInstall the update?",
+                    message=f"A schedule update is available.\nInstall the update?",
                     cancel=True,
                     ok="Update"
                 )
@@ -175,7 +175,7 @@ class Updater():
             elif is_schedule_update and not is_app_version_same and not is_later_app_version:
                 continue_update = rumps.alert(
                     title="Schedule Updates Available",
-                    message=f"You can update to schedule version {latest_schedule_version}, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
+                    message=f"A schedule update is available, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
                     cancel=True,
                     ok="Update"
                 )
@@ -185,7 +185,7 @@ class Updater():
                 if show_alerts:
                     rumps.alert(
                         title="You're Up to Date",
-                        message=f"You're on the latest available schedule version ({metadata_json["version"]})."
+                        message=f"You're on the latest available schedule version."
                     )
                 return False
 

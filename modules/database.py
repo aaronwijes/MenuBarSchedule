@@ -56,6 +56,18 @@ class Database():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS online_calendars (
+                calendar_id TEXT,
+                calendar_name TEXT,
+                pack_id TEXT,
+                schedule_name TEXT,
+                is_default INT,
+                exception_date TEXT,
+                PRIMARY KEY (calendar_id, pack_id, exception_date)
+            );
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS schedule_packs (
                 pack_id TEXT PRIMARY KEY,
                 pack_name TEXT,
@@ -113,6 +125,21 @@ class Database():
         """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time])
         self.conn.commit()
 
+    def add_online_calendar(self, calendar_id, calendar_name, pack_id, schedule_name, is_default, exception_date):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, is_default, exception_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT DO UPDATE SET
+                calendar_id = excluded.calendar_id,
+                calendar_name = excluded.calendar_name,
+                pack_id = excluded.pack_id,
+                schedule_name = excluded.schedule_name,
+                is_default = excluded.is_default,
+                exception_date = excluded.exception_date;
+        """, [calendar_id, calendar_name, pack_id, schedule_name, is_default, exception_date])
+        self.conn.commit()
+
     def add_online_schedule_pack(self, pack_id, pack_name, pack_version):
         cursor = self.conn.cursor()
         cursor.execute(f"""
@@ -140,7 +167,10 @@ class Database():
 
         packs = {}
         for row in rows:
-            packs[row["pack_id"]] = row["pack_name"]
+            packs[row["pack_id"]] = {
+                "pack_name": row["pack_name"],
+                "pack_version": row["pack_version"]
+            }
 
         return packs
 
@@ -206,17 +236,46 @@ class Database():
 
         return schedules
 
+    def get_calendar(self, pack_name):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT * FROM online_calendars
+            WHERE pack_id = ?
+            AND calendar_id = "calendar";
+        """, [pack_name])
+        rows = cursor.fetchall()
+
+        if len(rows) == 0:
+            return {}
+
+        calendar = {"exceptions": {}}
+        for row in rows:
+            if row["is_default"] == True:
+                calendar["default"] = row["schedule_name"]
+            else:
+                calendar["exceptions"][row["exception_date"]] = row["schedule_name"]
+        return calendar
+
     def convert_schedule_jsons_to_sql(self):
         schedule_path = Path(self.database_dir) / "schedules"
         if schedule_path.exists():
             metadata = Path(self.database_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
-            for pack in metadata_json["packs"]:
-                self.add_online_schedule_pack(pack["id"], pack["name"], pack["version"])
-                schedule_path = Path(self.database_dir) / "schedules" / pack["id"] / "json"
-                for schedule_json in schedule_path.glob("*.json"):
+            for pack_id, pack_obj in metadata_json.items():
+                self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
+                schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
+                calendar_path = schedule_json_path / ".." / "calendar.json"
+                
+                if calendar_path.exists():
+                    calendar = json.loads((calendar_path.read_text()))
+                    self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], 1, "")
+                    for key, value in calendar["exceptions"].items():
+                        self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, value, 0, key)
+
+                for schedule_json in schedule_json_path.glob("*.json"):
                     schedule = json.loads((schedule_json.read_text()))
                     for period_id, period in schedule["schedule"].items():
                         period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
                         period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
-                        self.add_online_schedule(pack["id"], Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"])
+                        self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"])
+

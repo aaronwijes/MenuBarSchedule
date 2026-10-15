@@ -1,4 +1,3 @@
-import json
 import rumps
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -35,7 +34,6 @@ class MenuBarSchedule(rumps.App):
         self.calendar = None
 
         self.sub_items = {}
-        self.schedules = {}
         self.current_schedule = {}
 
         self.change_schedule = rumps.MenuItem(title="Change Schedule")
@@ -207,10 +205,9 @@ class MenuBarSchedule(rumps.App):
             self.title = proposed_title
 
     def refresh_schedules(self, sender):
-        self.schedules = {}
-
         schedule_path = Path(self.database.database_dir) / "schedules"
-        if not schedule_path.exists():
+
+        if self.database.get_all_online_schedule_packs() == {}:
             self.change_schedule.clear()
             self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
 
@@ -224,17 +221,16 @@ class MenuBarSchedule(rumps.App):
         if schedule_path.exists():
             self.database.convert_schedule_jsons_to_sql()
 
-            metadata = Path(self.database.database_dir) / "schedules" / "metadata.json"
-            metadata_json = json.loads(metadata.read_text())
-            for pack in metadata_json["packs"]:
-                calendar_path = Path(self.database.database_dir) / "schedules" / pack["id"] / "calendar.json"
-                if calendar_path.exists():
-                    self.calendar = json.loads((calendar_path.read_text()))
+        if self.database.get_all_online_schedule_packs() != {}:
+            self.packs = self.database.get_all_online_schedule_packs()
+            self.pack_options = {id: pack_obj["pack_name"] for id, pack_obj in self.packs.items()}
+            for pack_id in self.packs.keys():
+                calendar = self.database.get_calendar(pack_id)
+                if calendar != {}:
+                    self.calendar = self.database.get_calendar(pack_id)
                 else:
                     self.calendar = None
-
-            self.packs = self.database.get_all_online_schedule_packs()
-            self.pack_options = {id: name for id, name in self.packs.items()}
+                
             if self.pack_options != {}:
                 self.pack_items = {
                     id: rumps.MenuItem(title=name, callback=self.select_option_pack)

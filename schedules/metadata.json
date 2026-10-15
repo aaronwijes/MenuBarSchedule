@@ -1,10 +1,6 @@
 {
-    "version": 7,
-    "packs": [
-        {
-            "id": "siths",
-            "name": "Staten Island Technical High School",
-            "version": 7
-        }
-    ]
+    "siths": {
+        "pack_name": "Staten Island Technical High School",
+        "pack_version": 7
+    }
 }
