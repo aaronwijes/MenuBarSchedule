@@ -1,9 +1,9 @@
 import json
 import rumps
 import zipfile
-from .database import Database
 from pathlib import Path
-from modules.info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
+from .database import Database
+from .info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
 
 lazy import requests
 lazy import shutil

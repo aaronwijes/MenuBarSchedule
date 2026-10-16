@@ -4,12 +4,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from platformdirs import user_config_dir
-
-VERSION = "3.1.0"
-VERSION_LIST = [int(component) for component in VERSION.split(".")]
-
-REPO_NAME = "MenuBarSchedule"
-GITHUB_USERNAME = "aaronwijes"
+from .info import REPO_NAME, GITHUB_USERNAME
 
 class Database():
     def __init__(self):
