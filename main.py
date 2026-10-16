@@ -137,8 +137,14 @@ class MenuBarSchedule(rumps.App):
                 if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
                     if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedule_options.values():
                         self.database.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
+                        if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] != self.current_schedule["schedule_id"]:
+                            schedule_id = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], self.calendar["default"])
+                            self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
                 elif self.calendar["default"] in self.schedule_options.values():
                     self.database.set_value("selected_schedule", self.calendar["default"])
+                    if self.calendar["default"] != self.current_schedule["schedule_id"]:
+                        schedule_id = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], self.calendar["default"])
+                        self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
 
                 if self.schedule_options != []:
                     self.schedule_items = {

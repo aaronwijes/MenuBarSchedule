@@ -241,18 +241,19 @@ class Database():
         return schedules
 
     def get_calendar(self, pack_name):
+        pack_id = self.get_online_pack_id(pack_name)
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT * FROM online_calendars
             WHERE pack_id = ?
             AND calendar_id = "calendar";
-        """, [pack_name])
+        """, [pack_id])
         rows = cursor.fetchall()
 
         if len(rows) == 0:
             return {}
 
-        calendar = {"exceptions": {}}
+        calendar = {"pack_id": pack_id, "exceptions": {}}
         for row in rows:
             if row["is_default"] == True:
                 calendar["default"] = row["schedule_name"]
