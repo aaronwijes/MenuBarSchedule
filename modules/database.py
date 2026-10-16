@@ -68,7 +68,7 @@ class Database():
         """)
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS schedule_packs (
+            CREATE TABLE IF NOT EXISTS online_schedule_packs (
                 pack_id TEXT PRIMARY KEY,
                 pack_name TEXT,
                 pack_version INT,
@@ -143,7 +143,7 @@ class Database():
     def add_online_schedule_pack(self, pack_id, pack_name, pack_version):
         cursor = self.conn.cursor()
         cursor.execute(f"""
-            INSERT INTO schedule_packs (pack_id, pack_name, pack_version)
+            INSERT INTO online_schedule_packs (pack_id, pack_name, pack_version)
             VALUES (?, ?, ?)
             ON CONFLICT DO UPDATE SET
                 pack_id = excluded.pack_id,
@@ -159,14 +159,14 @@ class Database():
             WHERE pack_id = ?;
         """, [pack_id])
         cursor.execute(f"""
-            DELETE FROM schedule_packs
+            DELETE FROM online_schedule_packs
             WHERE pack_id = ?;
         """, [pack_id])
         self.conn.commit()
 
     def get_all_online_schedule_packs(self):
         cursor = self.conn.cursor()
-        cursor.execute(f"SELECT * FROM schedule_packs;")
+        cursor.execute(f"SELECT * FROM online_schedule_packs;")
         rows = cursor.fetchall()
 
         packs = {}
@@ -181,7 +181,7 @@ class Database():
     def get_online_pack_id(self, pack_name):
         cursor = self.conn.cursor()
         cursor.execute(f"""
-            SELECT pack_id FROM schedule_packs
+            SELECT pack_id FROM online_schedule_packs
             WHERE pack_name = ?;
         """, [pack_name])
         rows = cursor.fetchall()
