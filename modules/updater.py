@@ -1,3 +1,4 @@
+import os
 import json
 import rumps
 import zipfile
@@ -43,7 +44,7 @@ class Updater():
     def __init__(self, database: Database):
         self.database = database
 
-    def update_app(self, show_alerts):
+    def update_app_macos(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -109,7 +110,7 @@ class Updater():
                 try:
                     with zipfile.ZipFile("schedules.zip", 'r') as zip_ref:
                         zip_ref.extractall(".")
-                    subprocess.run(["rm", "-rf", "schedules.zip"])
+                    os.remove("schedules.zip")
                     if show_alerts:
                         rumps.alert(
                             title="Update Successful",
@@ -117,8 +118,8 @@ class Updater():
                         )
                     return True
                 except:
-                    subprocess.run(["rm", "-rf", "schedules"])
-                    subprocess.run(["rm", "-rf", "schedules.zip"])
+                    shutil.rmtree("./schedules/")
+                    os.remove("schedules.zip")
                     rumps.alert(
                         title="Update Failed",
                         message="Failed to update schedules."
@@ -126,7 +127,7 @@ class Updater():
                     return False
         return False
 
-    def update_schedules(self, show_alerts):
+    def update_schedules_macos(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
