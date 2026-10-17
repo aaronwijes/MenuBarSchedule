@@ -66,5 +66,6 @@ jobs:
           dist/MenuBarSchedule.app.zip
           dist/schedules.zip
           schedules/metadata.json
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
