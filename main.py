@@ -200,6 +200,8 @@ class MenuBarSchedule(rumps.App):
 
         if self.database.fetch_value("selected_schedule") == "":
             proposed_title = "No Schedule"
+            if day_is_off:
+                proposed_title = "Day Off"
 
         if proposed_title != "":
             if proposed_title != self.title:
