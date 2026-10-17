@@ -23,6 +23,19 @@ def get_title(config, timeframe, period, seconds):
 
     return title
 
+def get_daily_schedule(database: Database, calendar, schedule_options, now):
+    if now.weekday() in calendar["off_days"]:
+        return ""
+    elif f"{now.month}/{now.day}/{now.year}" in calendar["exceptions"]:
+        if calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in schedule_options.values():
+            schedule_name = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
+            schedule_id = database.get_online_schedule_id(calendar["pack_id"], schedule_name)
+    elif calendar["default"] in schedule_options.values():
+        schedule_name = calendar["default"]
+        schedule_id = database.get_online_schedule_id(calendar["pack_id"], schedule_name)
+
+    return schedule_id, schedule_name
+
 class MenuBarSchedule(rumps.App):
     def __init__(self, database: Database, updater: Updater):
         super().__init__(
@@ -130,39 +143,69 @@ class MenuBarSchedule(rumps.App):
 
     def update_time_left(self, sender):
         now = datetime.now()
+        tomorrow = datetime.today() + timedelta(days=1)
         found_period = False
+        day_is_off = False
+        day_is_over = False
+        proposed_title = ""
 
-        if self.database.fetch_value("set_schedule_based_on_calendar"):
-            if self.calendar != None:
-                if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
-                    if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedule_options.values():
-                        self.database.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
-                        if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] != self.current_schedule["schedule_id"]:
-                            schedule_id = self.database.get_online_schedule_id(self.calendar["pack_id"], self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
-                            self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
-                elif self.calendar["default"] in self.schedule_options.values():
-                    self.database.set_value("selected_schedule", self.calendar["default"])
-                    if self.calendar["default"] != self.current_schedule["schedule_id"]:
-                        schedule_id = self.database.get_online_schedule_id(self.calendar["pack_id"], self.calendar["default"])
-                        self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
+        if self.database.fetch_value("set_schedule_based_on_calendar") and self.calendar != None:
+            temp_schedule_id = get_daily_schedule(database, self.calendar, self.schedule_options, now)[0]
+            temp_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], temp_schedule_id)
+            last_period_end = datetime(
+                year=now.year,
+                month=now.month,
+                day=now.day,
+                hour=list(temp_schedule["schedule"].values())[-1]["parsed_end"].hour,
+                minute=list(temp_schedule["schedule"].values())[-1]["parsed_end"].minute
+            )
+            if (now - last_period_end).total_seconds() > 0:
+                day_is_over = True
 
-                if self.schedule_options != []:
-                    self.schedule_items = {
-                        id: rumps.MenuItem(title=value, callback=None)
-                        for id, value in self.schedule_options.items()
-                    }
+            if day_is_over:
+                now = tomorrow
+            if now.weekday() in self.calendar["off_days"]:
+                day_is_off = True
+                self.database.set_value("selected_schedule", "")
+                self.current_schedule = {}
+            else:
+                schedule_id, schedule_name = get_daily_schedule(database, self.calendar, self.schedule_options, now)
+                if schedule_id != self.current_schedule.get("schedule_id", ""):
+                    self.database.set_value("selected_schedule", schedule_name)
+                    self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
 
-                    if self.database.fetch_value("selected_schedule") != "":
-                        schedule_id = list(self.schedule_options.keys())[list(self.schedule_options.values()).index(self.database.fetch_value("selected_schedule"))]
-                        self.schedule_items[schedule_id].state = True
+            if day_is_over and not day_is_off:
+                now = datetime.now()
+                start = datetime(
+                    year=tomorrow.year,
+                    month=tomorrow.month,
+                    day=tomorrow.day,
+                    hour=list(self.current_schedule["schedule"].values())[0]["parsed_start"].hour,
+                    minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute
+                )
+                time_until_start = round((start - now).total_seconds())
+                proposed_title = get_title(self.database, "start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
 
-                    self.change_schedule.clear()
-                    for item in self.schedule_items.values():
-                        self.change_schedule.add(item)
+            if self.schedule_options != []:
+                self.schedule_items = {
+                    id: rumps.MenuItem(title=value, callback=None)
+                    for id, value in self.schedule_options.items()
+                }
+
+                if self.database.fetch_value("selected_schedule") != "":
+                    schedule_id = list(self.schedule_options.keys())[list(self.schedule_options.values()).index(self.database.fetch_value("selected_schedule"))]
+                    self.schedule_items[schedule_id].state = True
+
+                self.change_schedule.clear()
+                for item in self.schedule_items.values():
+                    self.change_schedule.add(item)
 
         if self.database.fetch_value("selected_schedule") == "":
-            if self.title != "No Schedule":
-                self.title = "No Schedule"
+            proposed_title = "No Schedule"
+
+        if proposed_title != "":
+            if proposed_title != self.title:
+                self.title = proposed_title
             return
 
         proposed_title = ""
@@ -195,8 +238,7 @@ class MenuBarSchedule(rumps.App):
                     rumps.notification(title="Menu Bar Schedule", subtitle="", message=f"{period["name"]} is ending in five minutes ({period["end"]}).", sound=False)
                     self.last_notified_period = period_id
                 break
-        if not found_period:
-            tomorrow = datetime.today() + timedelta(days=1)
+        if not found_period and not day_is_off:
             start = datetime(
                 year=tomorrow.year,
                 month=tomorrow.month,

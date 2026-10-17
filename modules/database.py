@@ -45,8 +45,18 @@ class Database():
                 period_name TEXT,
                 start_time TEXT,
                 end_time TEXT,
+                insertion_order INT,
                 schedule_format_version INT DEFAULT 1,
                 PRIMARY KEY (pack_id, schedule_id, period_id)
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS online_schedule_packs (
+                pack_id TEXT PRIMARY KEY,
+                pack_name TEXT,
+                pack_version INT,
+                schedule_format_version INT DEFAULT 1
             );
         """)
 
@@ -59,8 +69,18 @@ class Database():
                 period_name TEXT,
                 start_time TEXT,
                 end_time TEXT,
+                insertion_order INT,
                 schedule_format_version INT DEFAULT 1,
                 PRIMARY KEY (pack_id, schedule_id, period_id)
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS custom_schedule_packs (
+                pack_id TEXT PRIMARY KEY,
+                pack_name TEXT,
+                pack_version INT,
+                schedule_format_version INT DEFAULT 1
             );
         """)
 
@@ -77,32 +97,12 @@ class Database():
         """)
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS custom_calendars (
+            CREATE TABLE IF NOT EXISTS online_calendars_off_days (
                 calendar_id TEXT,
                 calendar_name TEXT,
                 pack_id TEXT,
-                schedule_name TEXT,
-                is_default INT,
-                exception_date TEXT,
-                PRIMARY KEY (calendar_id, pack_id, exception_date)
-            );
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS online_schedule_packs (
-                pack_id TEXT PRIMARY KEY,
-                pack_name TEXT,
-                pack_version INT,
-                schedule_format_version INT DEFAULT 1
-            );
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS custom_schedule_packs (
-                pack_id TEXT PRIMARY KEY,
-                pack_name TEXT,
-                pack_version INT,
-                schedule_format_version INT DEFAULT 1
+                off_day INT,
+                PRIMARY KEY (calendar_id, pack_id, off_day)
             );
         """)
 
@@ -143,11 +143,11 @@ class Database():
         """, [pack_name])
         return len(cursor.fetchall()) > 0
 
-    def add_online_schedule(self, pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time):
+    def add_online_schedule(self, pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order):
         cursor = self.conn.cursor()
         cursor.execute(f"""
-            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT DO UPDATE SET
                 pack_id = excluded.pack_id,
                 schedule_id = excluded.schedule_id,
@@ -155,8 +155,9 @@ class Database():
                 period_id = excluded.period_id,
                 period_name = excluded.period_name,
                 start_time = excluded.start_time,
-                end_time = excluded.end_time;
-        """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time])
+                end_time = excluded.end_time,
+                insertion_order = excluded.insertion_order;
+        """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order])
         self.conn.commit()
 
     def add_online_calendar(self, calendar_id, calendar_name, pack_id, schedule_name, is_default, exception_date):
@@ -172,6 +173,19 @@ class Database():
                 is_default = excluded.is_default,
                 exception_date = excluded.exception_date;
         """, [calendar_id, calendar_name, pack_id, schedule_name, is_default, exception_date])
+        self.conn.commit()
+
+    def add_online_calendar_off_date(self, calendar_id, calendar_name, pack_id, off_day):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT DO UPDATE SET
+                calendar_id = excluded.calendar_id,
+                calendar_name = excluded.calendar_name,
+                pack_id = excluded.pack_id,
+                off_day = excluded.off_day;
+        """, [calendar_id, calendar_name, pack_id, off_day])
         self.conn.commit()
 
     def add_online_schedule_pack(self, pack_id, pack_name, pack_version):
@@ -226,7 +240,8 @@ class Database():
         cursor.execute(f"""
             SELECT * FROM online_schedules
             WHERE pack_id = ?
-            AND schedule_id = ?;
+            AND schedule_id = ?
+            ORDER BY insertion_order ASC;
         """, [pack_id, schedule_id])
 
         periods = cursor.fetchall()
@@ -282,16 +297,25 @@ class Database():
             AND calendar_id = "calendar";
         """, [pack_id])
         rows = cursor.fetchall()
-
         if len(rows) == 0:
             return {}
 
-        calendar = {"pack_id": pack_id, "exceptions": {}}
+        calendar = {"pack_id": pack_id, "exceptions": {}, "off_days": []}
         for row in rows:
             if row["is_default"] == True:
                 calendar["default"] = row["schedule_name"]
             else:
                 calendar["exceptions"][row["exception_date"]] = row["schedule_name"]
+
+        cursor.execute(f"""
+            SELECT * FROM online_calendars_off_days
+            WHERE pack_id = ?
+            AND calendar_id = "calendar";
+        """, [pack_id])
+        rows = cursor.fetchall()
+        for row in rows:
+            calendar["off_days"].append(row["off_day"])
+
         return calendar
 
     def remove_all_online_schedule_packs(self):
@@ -308,6 +332,9 @@ class Database():
         cursor = self.conn.cursor()
         cursor.execute(f"""
             DELETE FROM online_calendars;
+        """)
+        cursor.execute(f"""
+            DELETE FROM online_calendars_off_days;
         """)
         self.conn.commit()
 
@@ -328,10 +355,12 @@ class Database():
                     self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], 1, "")
                     for key, value in calendar["exceptions"].items():
                         self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, value, 0, key)
+                    for day_int in calendar["off_days"]:
+                        self.add_online_calendar_off_date("calendar", pack_obj["pack_name"], pack_id, day_int)
 
                 for schedule_json in schedule_json_path.glob("*.json"):
                     schedule = json.loads((schedule_json.read_text()))
-                    for period_id, period in schedule["schedule"].items():
+                    for i, (period_id, period) in enumerate(schedule["schedule"].items(), start=1):
                         period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
                         period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
-                        self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"])
+                        self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"], i)

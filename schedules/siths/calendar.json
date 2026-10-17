@@ -16,5 +16,7 @@
         "5/4/2027": "Evac/Lockdown Drill (2F)",
         "5/5/2027": "Faculty Conference",
         "6/4/2027": "Assembly (3A/3B)"
-    }
+    },
+    "off_days": [5, 6],
+    "off_dates": []
 }
