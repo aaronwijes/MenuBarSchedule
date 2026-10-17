@@ -24,9 +24,7 @@ def get_title(config, timeframe, period, seconds):
     return title
 
 def get_daily_schedule(database: Database, calendar, schedule_options, now):
-    if now.weekday() in calendar["off_days"]:
-        return ""
-    elif f"{now.month}/{now.day}/{now.year}" in calendar["exceptions"]:
+    if f"{now.month}/{now.day}/{now.year}" in calendar["exceptions"]:
         if calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in schedule_options.values():
             schedule_name = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]
             schedule_id = database.get_online_schedule_id(calendar["pack_id"], schedule_name)
