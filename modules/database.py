@@ -51,6 +51,20 @@ class Database():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS custom_schedules (
+                pack_id TEXT,
+                schedule_id TEXT,
+                schedule_name TEXT,
+                period_id TEXT,
+                period_name TEXT,
+                start_time TEXT,
+                end_time TEXT,
+                schedule_format_version INT DEFAULT 1,
+                PRIMARY KEY (pack_id, schedule_id, period_id)
+            );
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS online_calendars (
                 calendar_id TEXT,
                 calendar_name TEXT,
@@ -63,7 +77,28 @@ class Database():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS custom_calendars (
+                calendar_id TEXT,
+                calendar_name TEXT,
+                pack_id TEXT,
+                schedule_name TEXT,
+                is_default INT,
+                exception_date TEXT,
+                PRIMARY KEY (calendar_id, pack_id, exception_date)
+            );
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS online_schedule_packs (
+                pack_id TEXT PRIMARY KEY,
+                pack_name TEXT,
+                pack_version INT,
+                schedule_format_version INT DEFAULT 1
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS custom_schedule_packs (
                 pack_id TEXT PRIMARY KEY,
                 pack_name TEXT,
                 pack_version INT,
@@ -97,11 +132,15 @@ class Database():
 
     def key_exists(self, key):
         cursor = self.conn.cursor()
-        return len(cursor.execute("SELECT * FROM config WHERE key = ?", [key]).fetchall()) > 0
+        return len(cursor.execute("SELECT * FROM config WHERE key = ?;", [key]).fetchall()) > 0
 
     def query_enabled_pack(self, pack_name):
         cursor = self.conn.cursor()
-        cursor.execute(f"SELECT * FROM config WHERE key = \"selected_online_pack\" AND value = ?;", [pack_name])
+        cursor.execute("""
+            SELECT * FROM config
+            WHERE key = "selected_online_pack"
+            AND value = ?;
+        """, [pack_name])
         return len(cursor.fetchall()) > 0
 
     def add_online_schedule(self, pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time):
@@ -159,20 +198,6 @@ class Database():
         """, [pack_id])
         self.conn.commit()
 
-    def get_all_online_schedule_packs(self):
-        cursor = self.conn.cursor()
-        cursor.execute(f"SELECT * FROM online_schedule_packs;")
-        rows = cursor.fetchall()
-
-        packs = {}
-        for row in rows:
-            packs[row["pack_id"]] = {
-                "pack_name": row["pack_name"],
-                "pack_version": row["pack_version"]
-            }
-
-        return packs
-
     def get_online_pack_id(self, pack_name):
         cursor = self.conn.cursor()
         cursor.execute(f"""
@@ -217,6 +242,20 @@ class Database():
 
         return schedule
 
+    def get_all_online_schedule_packs(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"SELECT * FROM online_schedule_packs;")
+        rows = cursor.fetchall()
+
+        packs = {}
+        for row in rows:
+            packs[row["pack_id"]] = {
+                "pack_name": row["pack_name"],
+                "pack_version": row["pack_version"]
+            }
+
+        return packs
+
     def get_all_online_schedules(self):
         pack_id = self.get_online_pack_id(self.fetch_value("selected_online_pack"))
         cursor = self.conn.cursor()
@@ -235,8 +274,7 @@ class Database():
 
         return schedules
 
-    def get_calendar(self, pack_name):
-        pack_id = self.get_online_pack_id(pack_name)
+    def get_calendar(self, pack_id):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT * FROM online_calendars
@@ -256,17 +294,35 @@ class Database():
                 calendar["exceptions"][row["exception_date"]] = row["schedule_name"]
         return calendar
 
+    def remove_all_online_schedule_packs(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            DELETE FROM online_schedules;
+        """)
+        cursor.execute(f"""
+            DELETE FROM online_schedule_packs;
+        """)
+        self.conn.commit()
+
+    def remove_all_online_calendars(self):
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            DELETE FROM online_calendars;
+        """)
+        self.conn.commit()
+
     def convert_schedule_jsons_to_sql(self):
         schedule_path = Path(self.database_dir) / "schedules"
         if schedule_path.exists():
             metadata = Path(self.database_dir) / "schedules" / "metadata.json"
             metadata_json = json.loads(metadata.read_text())
+            self.remove_all_online_calendars()
+            self.remove_all_online_schedule_packs()
             for pack_id, pack_obj in metadata_json.items():
-                self.remove_online_schedule_pack(pack_id)
                 self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
                 schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
                 calendar_path = schedule_json_path / ".." / "calendar.json"
-                
+
                 if calendar_path.exists():
                     calendar = json.loads((calendar_path.read_text()))
                     self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], 1, "")
@@ -279,4 +335,3 @@ class Database():
                         period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
                         period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
                         self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"])
-
