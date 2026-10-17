@@ -272,12 +272,6 @@ class MenuBarSchedule(rumps.App):
         if self.database.get_all_online_schedule_packs() != {}:
             self.packs = self.database.get_all_online_schedule_packs()
             self.pack_options = {id: pack_obj["pack_name"] for id, pack_obj in self.packs.items()}
-            for pack_id in self.packs.keys():
-                calendar = self.database.get_calendar(pack_id)
-                if calendar != {}:
-                    self.calendar = calendar
-                else:
-                    self.calendar = None
                 
             if self.pack_options != {}:
                 self.pack_items = {
@@ -287,9 +281,16 @@ class MenuBarSchedule(rumps.App):
 
                 if self.database.fetch_value("selected_online_pack") not in self.pack_options.values():
                     self.database.set_value("selected_online_pack", "")
+                    self.calendar = None
                 if self.database.fetch_value("selected_online_pack") != "":
                     pack_id = [id for id, name in self.pack_options.items() if name == self.database.fetch_value("selected_online_pack")][0]
                     self.pack_items[pack_id].state = True
+
+                    calendar = self.database.get_calendar(pack_id)
+                    if calendar != {}:
+                        self.calendar = calendar
+                    else:
+                        self.calendar = None
                 
                 self.change_schedule_pack.clear()
                 for item in self.pack_items.values():
@@ -306,15 +307,6 @@ class MenuBarSchedule(rumps.App):
                     for id, name in self.schedule_options.items()
                 }
 
-                if self.database.fetch_value("set_schedule_based_on_calendar"):
-                    now = datetime.now()
-                    if self.calendar != None:
-                        if f"{now.month}/{now.day}/{now.year}" in self.calendar["exceptions"]:
-                            if self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"] in self.schedule_options.values():
-                                self.database.set_value("selected_schedule", self.calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"])
-                        elif self.calendar["default"] in self.schedule_options.values():
-                            self.database.set_value("selected_schedule", self.calendar["default"])
-
                 if self.database.fetch_value("selected_schedule") not in self.schedule_options.values():
                     self.database.set_value("selected_schedule", "")
                 if self.database.fetch_value("selected_schedule") != "":
@@ -323,6 +315,7 @@ class MenuBarSchedule(rumps.App):
                     schedule_id = [id for id, name in self.schedule_options.items() if name == selected_schedule][0]
                     self.schedule_items[schedule_id].state = True
                     self.current_schedule = self.database.get_schedule_from_os_pack(pack_id, schedule_id)
+                    self.update_time_left(sender)
 
                 self.change_schedule.clear()
                 for item in self.schedule_items.values():
