@@ -170,7 +170,7 @@ class Updater():
             elif is_schedule_update and not is_app_version_same and is_later_app_version:
                 rumps.alert(
                     title="Cannot Update Schedules",
-                    message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.",
+                    message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
                 )
                 return False
             elif is_schedule_update and not is_app_version_same and not is_later_app_version:
@@ -216,5 +216,15 @@ class Updater():
 
         session = requests.Session()
         releases = get_releases(session)
+
+        is_app_version_same = releases[0]["tag_name"] == VERSION
+        is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
+
+        if not is_app_version_same and is_later_app_version:
+            rumps.alert(
+                title="Cannot Install Schedules",
+                message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to install schedules.\nYou can update the app by clicking \"Check for App Updates\".",
+            )
+            return False
 
         return self.install_schedules_core(session, releases, False)
