@@ -298,7 +298,7 @@ class MBSCommonFunctions():
                 message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
             title = self.current_schedule["name"]
         else:
-            title = "No Schedule Selected",
+            title = "No Schedule Selected"
             message = "No schedule is currently selected.\nSelect a schedule to view its timetable!"
 
         return title, message
