@@ -18,8 +18,6 @@ class MenuBarSchedule(rumps.App):
         self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
         self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
 
-        self.last_notified_period = None
-
         self.settings = rumps.MenuItem(title="Settings")
         self.settings_items = {
             "use_shorthand": rumps.MenuItem(title="Shorten Title", callback=self.toggle_settings),
@@ -33,8 +31,8 @@ class MenuBarSchedule(rumps.App):
             "NO_CONFIG_3": rumps.MenuItem(title="Refresh Schedules from JSON", callback=self.refresh_schedules),
         }
         for id, item in self.settings_items.items():
-            if not "NO_CONFIG" in id:
-                item.state = self.database.fetch_value(id)
+            if id in self.common.settings:
+                item.state = self.common.settings[id]
             self.settings.add(item)
 
         self.menu = [
@@ -78,18 +76,8 @@ class MenuBarSchedule(rumps.App):
 
     def update_time_left(self, sender):
         use_calendar, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
-        if use_calendar and self.schedule_options != []:
-            self.schedule_items = {
-                id: rumps.MenuItem(title=value, callback=None)
-                for id, value in self.schedule_options.items()
-            }
-
-            if schedule_id != "":
-                self.schedule_items[schedule_id].state = True
-
-            self.change_schedule.clear()
-            for item in self.schedule_items.values():
-                self.change_schedule.add(item)
+        if use_calendar and self.schedule_options != [] and schedule_id != "":
+            self.schedule_items[schedule_id].state = True
 
         if proposed_title != "":
             if self.title != proposed_title:
@@ -100,6 +88,7 @@ class MenuBarSchedule(rumps.App):
         if notification_title != "" and notification_message != None:
             rumps.notification(
                 title=notification_title,
+                subtitle="",
                 message=notification_message,
                 sound=False
             )
