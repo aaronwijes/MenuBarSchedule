@@ -131,6 +131,7 @@ class Updater():
         try:
             session = requests.Session()
             releases = get_releases(session)
+            force_install = False
 
             schedules_present = False
             schedules_metadata_present = False
@@ -148,17 +149,31 @@ class Updater():
                 )
                 return False
 
+            is_app_version_same = releases[0]["tag_name"] == VERSION
+            is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
+
             saved_metadata_json = self.database.get_all_online_schedule_packs()
             current_metadata_json = json.loads(download_file(session, schedules_metadata_url).decode())
 
-            is_schedule_update = False
-            is_app_version_same = releases[0]["tag_name"] == VERSION
-            is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
-            for id, metadata_obj in current_metadata_json.items():
-                if saved_metadata_json[id]["pack_version"] < current_metadata_json[id]["pack_version"]:
-                    is_schedule_update = True
+            if saved_metadata_json == {}:
+                force_install = True
+                is_schedule_update = True
+            else:
+                is_schedule_update = False
+                for id, metadata_obj in current_metadata_json.items():
+                    if saved_metadata_json.get(id, {"pack_version": 0})["pack_version"] < metadata_obj["pack_version"]:
+                        is_schedule_update = True
 
-            if is_schedule_update and is_app_version_same:
+            if force_install and is_app_version_same:
+                download_schedules = rumps.alert(
+                    title="Schedules Not Found",
+                    message="Schedules are required for Menu Bar Schedule to function.\nInstall schedules?",
+                    cancel=True,
+                    ok="Install"
+                )
+                if not download_schedules:
+                    return False
+            elif is_schedule_update and is_app_version_same:
                 update = rumps.alert(
                     title="Schedule Updates Available",
                     message=f"A schedule update is available.\nInstall the update?",
@@ -190,7 +205,7 @@ class Updater():
                     )
                 return False
 
-            return self.install_schedules_core(session, releases)
+            return self.install_schedules_core(session, releases, show_alerts)
         except requests.exceptions.ConnectionError:
             rumps.alert(
                 title="Connection Error",
@@ -203,43 +218,3 @@ class Updater():
                 message=f"The schedule metadata seems to be corrupt."
             )
             return False
-
-    def install_schedules(self):
-        download_schedules = rumps.alert(
-            title="Schedules Not Found",
-            message="Schedules are required for Menu Bar Schedule to function.\nInstall schedules?",
-            cancel=True,
-            ok="Install"
-        )
-        if not download_schedules:
-            return False
-
-        session = requests.Session()
-        releases = get_releases(session)
-
-        schedules_present = False
-        schedules_metadata_present = False
-        for asset in releases[0]["assets"]:
-            if asset["name"] == "schedules.zip":
-                schedules_present = True
-            elif asset["name"] == "metadata.json":
-                schedules_metadata_present = True
-
-        if not (schedules_present and schedules_metadata_present):
-            rumps.alert(
-                title="Cannot Install Schedules",
-                message=f"Either the schedule files or schedule metadata are not present."
-            )
-            return False
-
-        is_app_version_same = releases[0]["tag_name"] == VERSION
-        is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
-
-        if not is_app_version_same and is_later_app_version:
-            rumps.alert(
-                title="Cannot Install Schedules",
-                message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to install schedules.\nYou can update the app by clicking \"Check for App Updates\".",
-            )
-            return False
-
-        return self.install_schedules_core(session, releases, False)

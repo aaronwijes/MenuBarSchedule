@@ -106,7 +106,7 @@ class MenuBarSchedule(rumps.App):
             self.change_schedule_pack.clear()
             self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
-            self.common.prompt_install_schedules()
+            return
 
         self.pack_options, selected_pack_id = self.common.load_packs()
         if self.pack_options != {}:

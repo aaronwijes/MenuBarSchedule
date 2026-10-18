@@ -33,20 +33,20 @@ class MBSCommonFunctions():
     def schedule_dir_exists(self):
         schedule_path = Path(self.database.database_dir) / "schedules"
 
-        if self.database.get_all_online_schedule_packs() == {}:
-            if not self.updater.install_schedules():
-                self.prompt_install_schedules()
+        if self.database.get_all_online_schedule_packs() == {} and not schedule_path.exists():
+            if not self.update_schedules(False):
+                for key in ["selected_schedule", "selected_schedule_id", "selected_online_pack", "selected_online_pack_id"]:
+                    self.settings[key] = ""
+                    self.database.set_value(key, "")
+                return False
 
         if schedule_path.exists():
             self.database.convert_schedule_jsons_to_sql()
             return True
+        elif self.database.get_all_online_schedule_packs() != {}:
+            return True
         else:
             return False
-
-    def prompt_install_schedules(self):
-        if not self.updater.install_schedules():
-            self.database.set_value("selected_schedule", "")
-            self.database.set_value("selected_online_pack", "")
 
     def load_packs(self):
         self.packs = self.database.get_all_online_schedule_packs()
