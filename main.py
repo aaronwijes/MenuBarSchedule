@@ -75,9 +75,12 @@ class MenuBarSchedule(rumps.App):
             self.refresh_schedules(None)
 
     def update_time_left(self, sender):
-        use_calendar, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
-        if use_calendar and self.schedule_options != [] and schedule_id != "":
-            self.schedule_items[schedule_id].state = True
+        use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
+        if use_calendar and self.schedule_options != [] and old_schedule_id != schedule_id:
+            if old_schedule_id != "":
+                self.schedule_items[old_schedule_id].state = False
+            if schedule_id != "":
+                self.schedule_items[schedule_id].state = True
 
         if proposed_title != "":
             if self.title != proposed_title:

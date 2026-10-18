@@ -190,6 +190,7 @@ class MBSCommonFunctions():
         day_is_over = False
         proposed_title = ""
         schedule_id = ""
+        old_schedule_id = self.settings["selected_schedule_id"]
 
         use_calendar = self.settings["set_schedule_based_on_calendar"] and self.calendar != None
         if use_calendar:
@@ -236,7 +237,7 @@ class MBSCommonFunctions():
         if self.settings["selected_schedule"] == "":
             proposed_title = "No Schedule" if not day_is_off else "Day Off"
 
-        return use_calendar, schedule_id, proposed_title, day_is_off
+        return use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off
 
     def update_time_left(self, day_is_off):
         now = datetime.now()
