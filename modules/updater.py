@@ -217,6 +217,21 @@ class Updater():
         session = requests.Session()
         releases = get_releases(session)
 
+        schedules_present = False
+        schedules_metadata_present = False
+        for asset in releases[0]["assets"]:
+            if asset["name"] == "schedules.zip":
+                schedules_present = True
+            elif asset["name"] == "metadata.json":
+                schedules_metadata_present = True
+
+        if not (schedules_present and schedules_metadata_present):
+            rumps.alert(
+                title="Cannot Install Schedules",
+                message=f"Either the schedule files or schedule metadata are not present."
+            )
+            return False
+
         is_app_version_same = releases[0]["tag_name"] == VERSION
         is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
 
