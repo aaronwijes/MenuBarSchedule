@@ -322,4 +322,4 @@ class MBSCommonFunctions():
 
     def update_schedules(self, show_alerts):
         if system() == "Darwin":
-            return self.updater.update_schedules_macos(show_alerts)
+            return self.updater.update_schedules(show_alerts)

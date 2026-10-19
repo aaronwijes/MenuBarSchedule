@@ -162,7 +162,7 @@ class Updater():
                     return False
         return False
 
-    def update_schedules_macos(self, show_alerts):
+    def update_schedules(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
