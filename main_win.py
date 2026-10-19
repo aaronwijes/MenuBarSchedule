@@ -52,6 +52,7 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
 
+        self.is_running = True
         self.timer = threading.Timer(1.0, self.update_time_left)
         self.timer.start()
 
@@ -119,8 +120,9 @@ class MenuBarSchedule(pystray.Icon):
         if self.title != proposed_title:
             self.title = proposed_title
 
-        self.timer = threading.Timer(1.0, self.update_time_left)
-        self.timer.start()
+        if self.is_running:
+            self.timer = threading.Timer(1.0, self.update_time_left)
+            self.timer.start()
 
     def refresh_schedules(self):
         if not self.common.schedule_dir_exists():
@@ -180,5 +182,7 @@ if __name__ == "__main__":
     database = Database()
     updater = Updater(database)
     common = MBSCommonFunctions(database, updater)
-    MenuBarSchedule(database, common).run()
+    app = MenuBarSchedule(database, common)
+    app.run()
+    app.is_running = False
     database.conn.close()
