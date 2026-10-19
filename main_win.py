@@ -57,7 +57,7 @@ class MenuBarSchedule(pystray.Icon):
 
     def show_info(self, title, message):
         import ctypes
-        ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
+        threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
 
     def create_image(self, width, height, color1, color2):
         # Generate an image and draw a pattern
@@ -159,9 +159,12 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.update_app(True) == "restart":
             self.stop()
 
-    def update_schedules(self, sender):
+    def update_schedules_thread(self):
         if self.common.update_schedules(True):
             self.refresh_schedules(None)
+
+    def update_schedules(self, sender):
+        threading.Thread(target=self.update_schedules_thread, daemon=True).start()
 
     def about(self, sender):
         title, message = self.common.about()
