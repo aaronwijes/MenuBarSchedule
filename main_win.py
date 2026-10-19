@@ -49,11 +49,11 @@ class MenuBarSchedule(pystray.Icon):
         )
 
         self.refresh_schedules()
-        self.timer = threading.Timer(1.0, self.update_time_left)
-        self.timer.start()
-
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
+
+        self.timer = threading.Timer(1.0, self.update_time_left)
+        self.timer.start()
 
     def show_info(self, title, message):
         import ctypes
@@ -118,6 +118,9 @@ class MenuBarSchedule(pystray.Icon):
             # )
         if self.title != proposed_title:
             self.title = proposed_title
+
+        self.timer = threading.Timer(1.0, self.update_time_left)
+        self.timer.start()
 
     def refresh_schedules(self):
         if not self.common.schedule_dir_exists():
