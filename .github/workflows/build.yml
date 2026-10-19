@@ -52,7 +52,7 @@ jobs:
           mkdir ./dist/MenuBarSchedule/resources/
           copy ./resources/Gidole-Regular.ttf ./dist/MenuBarSchedule/resources/Gidole-Regular.ttf
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
-          powershell -Command "Compress-Archive -Path ./dist/MenuBarSchedule/ -DestinationPath ./dist/MenuBarSchedule.zip"
+          tar -caf ./dist/MenuBarSchedule.zip ./dist/MenuBarSchedule
 
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
@@ -75,7 +75,7 @@ jobs:
     steps:
       - name: Build schedules
         run: |
-          zip -q -r schedules.zip schedules/
+          zip -q -r schedules.zip . -i schedules/
 
       - name: Upload schedules
         uses: actions/upload-artifact@v7
