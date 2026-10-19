@@ -1,5 +1,4 @@
 import sys
-import rumps
 import pystray
 from modules.database import Database
 from modules.updater import Updater
@@ -48,12 +47,6 @@ class MenuBarSchedule(pystray.Icon):
             pystray.Menu.SEPARATOR,
             Item(text="Quit", action=self.stop)
         )
-        
-        self.change_schedule = rumps.MenuItem(title="Change Schedule")
-        self.change_schedule.add(rumps.MenuItem("Loading..."))
-
-        self.change_schedule_pack = rumps.MenuItem(title="Configure Schedule Packs")
-        self.change_schedule_pack.add(rumps.MenuItem("Loading..."))
 
         self.refresh_schedules()
         self.timer = threading.Timer(1.0, self.update_time_left)
@@ -116,23 +109,20 @@ class MenuBarSchedule(pystray.Icon):
 
         proposed_title, notification_title, notification_message = self.common.update_time_left(day_is_off)
         if notification_title != "" and notification_message != None:
-            rumps.notification(
-                title=notification_title,
-                subtitle="",
-                message=notification_message,
-                sound=False
-            )
+            pass
+            # rumps.notification(
+            #     title=notification_title,
+            #     subtitle="",
+            #     message=notification_message,
+            #     sound=False
+            # )
         if self.title != proposed_title:
             self.title = proposed_title
 
     def refresh_schedules(self):
         if not self.common.schedule_dir_exists():
-            self.change_schedule.clear()
-            self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
-
-            self.change_schedule_pack.clear()
-            self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
-
+            self.pack_items = {"NONE": Item(text="No Packs Found", action=False)}
+            self.schedule_items = {"NONE": Item(text="No Schedules Found", action=False)}
             return
 
         self.pack_options, selected_pack_id = self.common.load_packs()
@@ -142,7 +132,7 @@ class MenuBarSchedule(pystray.Icon):
                 for id, name in self.pack_options.items()
             }
         else:
-            self.schedule_items = {"NONE": Item(text="No Packs Found", action=False)}
+            self.pack_items = {"NONE": Item(text="No Packs Found", action=False)}
 
         self.schedule_options, selected_schedule_id, set_schedule_based_on_calendar = self.common.load_schedules()
         if self.schedule_options != {}:
@@ -167,7 +157,7 @@ class MenuBarSchedule(pystray.Icon):
 
     def check_updates(self, sender):
         if self.common.update_app(True) == "restart":
-            rumps.quit_application()
+            self.stop()
 
     def update_schedules(self, sender):
         if self.common.update_schedules(True):
