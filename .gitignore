@@ -1,7 +1,6 @@
 *.venv
 *__pycache__
 *.DS_Store
-*.iconset
 *.code-workspace
 *.app
 *.env

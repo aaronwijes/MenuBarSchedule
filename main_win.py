@@ -1,24 +1,22 @@
-import sys
+import os
 import pystray
+import threading
+from pathlib import Path
 from modules.database import Database
 from modules.updater import Updater
 from modules.common import MBSCommonFunctions
 from pystray import Menu, MenuItem as Item
-from PIL import Image, ImageDraw
-import threading
-import platform
-
-OPSYS = platform.system()
+from PIL import Image, ImageDraw, ImageFont
 
 class MenuBarSchedule(pystray.Icon):
-    def __init__(self, database: Database, common: MBSCommonFunctions):
+    def __init__(self, common: MBSCommonFunctions, font_path: str):
         super().__init__(
             name="Menu Bar Schedule",
             title=""
         )
         self.is_running = True
-        self.icon = self.create_image(64, 64, 'black', 'white')
-        self.database = database
+        self.font_path = font_path
+        self.icon = self.create_image("MBS")
         self.common = common
 
         self.pack_items = {"NONE": Item("Loading...", action=None)}
@@ -60,17 +58,18 @@ class MenuBarSchedule(pystray.Icon):
         import ctypes
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
 
-    def create_image(self, width, height, color1, color2):
-        # Generate an image and draw a pattern
-        image = Image.new('RGB', (width, height), color1)
-        dc = ImageDraw.Draw(image)
-        dc.rectangle(
-            (width // 2, 0, width, height // 2),
-            fill=color2)
-        dc.rectangle(
-            (0, height // 2, width // 2, height),
-            fill=color2)
+    def create_image(self, text):
+        font = ImageFont.truetype(self.font_path, size=24)
+        image = Image.new('RGBA', (64, 64), (198, 169, 73))
+        mask = Image.new("L", image.size, 0)
 
+        dc = ImageDraw.Draw(image)
+        dc.text((5, 5), text, fill=(0, 0, 0, 255), font=font)
+
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle([(0, 0), image.size], radius=15, fill=255)
+
+        image.putalpha(mask)
         return image
 
     def generate_schedule_menu(self):
@@ -80,8 +79,8 @@ class MenuBarSchedule(pystray.Icon):
         return self.pack_items.values()
 
     def select_option_schedule(self, icon, item):
-        self.common.select_schedule(item.text)
-        # self.update_menu()
+        if not self.common.settings["set_schedule_based_on_calendar"]:
+            self.common.select_schedule(item.text)
 
     def select_option_pack(self, icon, item):
         self.common.select_pack(item.text)
@@ -93,35 +92,34 @@ class MenuBarSchedule(pystray.Icon):
         if item.text == "Set Schedule Based on Calendar":
             self.refresh_schedules()
 
-        self.update_menu()
-
-    def update_time_left(self):
+    def update_time_left(self, continue_thread=True):
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
-        if use_calendar and self.schedule_options != [] and old_schedule_id != schedule_id:
-            if old_schedule_id != "":
-                self.schedule_items[old_schedule_id].state = False
-            if schedule_id != "":
-                self.schedule_items[schedule_id].state = True
 
         if proposed_title != "":
             if self.title != proposed_title:
                 self.title = proposed_title
-            return
+                if len(self.title.split(": ")) > 1:
+                    icon_text = self.title.split(": ")[1].replace("No Schedule", "MBS").replace(" ", "\n")
+                else:
+                    icon_text = self.title.replace("No Schedule", "MBS").replace(" ", "\n")
+                self.icon = self.create_image(icon_text)
+        else:
+            proposed_title, notification_title, notification_message = self.common.update_time_left(day_is_off)
+            if notification_title != "" and notification_message != None:
+                self.notify(
+                    title=notification_title,
+                    message=notification_message
+                )
+            if self.title != proposed_title:
+                self.title = proposed_title
+                if len(self.title.split(": ")) > 1:
+                    icon_text = self.title.split(": ")[1].replace("No Schedule", "MBS").replace(" ", "\n")
+                else:
+                    icon_text = self.title.replace("No Schedule", "MBS").replace(" ", "\n")
+                self.icon = self.create_image(icon_text)
 
-        proposed_title, notification_title, notification_message = self.common.update_time_left(day_is_off)
-        if notification_title != "" and notification_message != None:
-            pass
-            # rumps.notification(
-            #     title=notification_title,
-            #     subtitle="",
-            #     message=notification_message,
-            #     sound=False
-            # )
-        if self.title != proposed_title:
-            self.title = proposed_title
-
-        if self.is_running:
-            self.timer = threading.Timer(1.0, self.update_time_left)
+        if self.is_running and continue_thread:
+            self.timer = threading.Timer(interval=1.0, function=self.update_time_left)
             self.timer.start()
 
     def refresh_schedules(self):
@@ -142,16 +140,14 @@ class MenuBarSchedule(pystray.Icon):
         self.schedule_options, selected_schedule_id, set_schedule_based_on_calendar = self.common.load_schedules()
         if self.schedule_options != {}:
             self.schedule_items = {
-                id: pystray.MenuItem(text=name, action=self.select_option_schedule if not set_schedule_based_on_calendar else None, checked=lambda item, id=id: (self.common.settings["selected_schedule_id"] == id))
+                id: pystray.MenuItem(text=name, action=self.select_option_schedule, checked=lambda item, id=id: (self.common.settings["selected_schedule_id"] == id))
                 for id, name in self.schedule_options.items()
             }
 
             if selected_schedule_id != "":
-                self.update_time_left()
+                self.update_time_left(continue_thread=False)
         else:
             self.schedule_items = {"NONE": Item(text="No Schedules Found", action=False)}
-
-        # self.update_menu()
 
     def view_schedule(self, sender):
         title, message = self.common.view_schedule()
@@ -179,10 +175,11 @@ class MenuBarSchedule(pystray.Icon):
         )
 
 if __name__ == "__main__":
+    font_path = Path(os.getcwd()) / "resources" / "Gidole-Regular.ttf"
     database = Database()
     updater = Updater(database)
     common = MBSCommonFunctions(database, updater)
-    app = MenuBarSchedule(database, common)
+    app = MenuBarSchedule(common, font_path)
     app.run()
     app.is_running = False
     database.conn.close()
