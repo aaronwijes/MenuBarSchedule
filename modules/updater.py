@@ -43,7 +43,7 @@ def askokcancel(title, message, ok="OK", cancel="Cancel"):
             cancel=cancel
         )
     else:
-        return ctypes.windll.user32.MessageBoxW(0, message, title, 0x04) == 1
+        return ctypes.windll.user32.MessageBoxW(0, message, title, 0x04) == 6
 
 def is_update(new_version_list):
     if new_version_list[0] > VERSION_LIST[0]:
