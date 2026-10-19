@@ -40,7 +40,7 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="View Current Schedule", action=self.view_schedule),
             pystray.Menu.SEPARATOR,
             Item(text="Check for App Updates", action=self.check_updates),
-            Item(text="Check for Schedule Update", action=self.update_schedules),
+            Item(text="Check for Schedule Updates", action=self.update_schedules),
             pystray.Menu.SEPARATOR,
             Item(text="Settings", action=Menu(*self.settings_items)),
             Item(text="About", action=self.about),
