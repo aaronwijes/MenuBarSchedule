@@ -55,11 +55,11 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
 
-    def show_info(title, message):
+    def show_info(self, title, message):
         import ctypes
         ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
 
-    def create_image(width, height, color1, color2):
+    def create_image(self, width, height, color1, color2):
         # Generate an image and draw a pattern
         image = Image.new('RGB', (width, height), color1)
         dc = ImageDraw.Draw(image)
