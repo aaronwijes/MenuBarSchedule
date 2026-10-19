@@ -47,7 +47,8 @@ jobs:
       - name: Build App (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller ./resources/win.spec
+          copy ./resources/win.spec win.spec
+          pyinstaller win.spec
           mkdir ./dist/MenuBarSchedule/resources/
           copy ./resources/Gidole-Regular.ttf ./dist/MenuBarSchedule/resources/Gidole-Regular.ttf
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
@@ -74,13 +75,13 @@ jobs:
     steps:
       - name: Build schedules
         run: |
-          zip -q -r dist/schedules.zip ./schedules/*
+          zip -q -r schedules.zip schedules/
 
       - name: Upload schedules
         uses: actions/upload-artifact@v7
         with:
           name: schedules.zip
-          path: dist/schedules.zip
+          path: schedules.zip
     
       - name: Upload schedule metadata
         uses: actions/upload-artifact@v7
