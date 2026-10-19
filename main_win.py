@@ -16,6 +16,7 @@ class MenuBarSchedule(pystray.Icon):
             name="Menu Bar Schedule",
             title=""
         )
+        self.is_running = True
         self.icon = self.create_image(64, 64, 'black', 'white')
         self.database = database
         self.common = common
@@ -52,7 +53,6 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
 
-        self.is_running = True
         self.timer = threading.Timer(1.0, self.update_time_left)
         self.timer.start()
 
