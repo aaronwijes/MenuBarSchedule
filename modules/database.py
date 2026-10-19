@@ -27,7 +27,7 @@ class Database():
         }
 
         os.chdir(self.database_dir)
-        self.conn = sqlite3.connect("data.db")
+        self.conn = sqlite3.connect("data.db", check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         cursor = self.conn.cursor()
 

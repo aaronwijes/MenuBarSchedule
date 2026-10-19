@@ -1,7 +1,7 @@
 import os
 import json
-import rumps
 import zipfile
+import platform
 from pathlib import Path
 from .database import Database
 from .info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
@@ -9,6 +9,41 @@ from .info import VERSION, VERSION_LIST, REPO_NAME, GITHUB_USERNAME
 lazy import requests
 lazy import shutil
 lazy import subprocess
+
+OPSYS = platform.system()
+if OPSYS == "Darwin":
+    import rumps
+else:
+    import ctypes
+
+def show_info(title, message):
+    if OPSYS == "Darwin":
+        rumps.alert(
+            title=title,
+            message=message
+        )
+    else:
+        ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
+
+def show_error(title, message):
+    if OPSYS == "Darwin":
+        rumps.alert(
+            title=title,
+            message=message
+        )
+    else:
+        ctypes.windll.user32.MessageBoxW(0, message, title, 0x10)
+
+def askokcancel(title, message, ok="OK", cancel="Cancel"):
+    if OPSYS == "Darwin":
+        return rumps.alert(
+            title=title,
+            message=message,
+            ok=ok,
+            cancel=cancel
+        )
+    else:
+        return ctypes.windll.user32.MessageBoxW(0, message, title, 0x04) == 1
 
 def is_update(new_version_list):
     if new_version_list[0] > VERSION_LIST[0]:
@@ -24,7 +59,7 @@ def is_update(new_version_list):
 def get_releases(session):
     releases_req = session.get(f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/releases")
     if not releases_req.ok:
-        rumps.alert(
+        show_error(
             title="Connection Error",
             message="Couldn't connect to GitHub Releases."
         )
@@ -53,13 +88,13 @@ class Updater():
 
             if not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
                 if show_alerts:
-                    rumps.alert(
+                    show_info(
                         title="You're Up to Date",
                         message=f"You're on the latest available version ({VERSION})."
                     )
                 return
 
-            update = rumps.alert(
+            update = askokcancel(
                 title="Update Available",
                 message=f"You can update to version {releases[0]["tag_name"]}.\nInstall the update?",
                 cancel=True,
@@ -79,7 +114,7 @@ class Updater():
                         subprocess.run(["chmod", "+x", "/Applications/MenuBarSchedule.app/Contents/MacOS/MenuBarSchedule"])
                         subprocess.run(["xattr", "-dr", "com.apple.quarantine", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
-                        if rumps.alert(
+                        if askokcancel(
                             title="Update Successful",
                             message="Successfully installed the update!\nRestart Menu Bar Schedule to finish the update.",
                             ok="Restart Now",
@@ -90,12 +125,12 @@ class Updater():
                     except:
                         subprocess.run(["rm", "-rf", "/Applications/MenuBarSchedule.app"])
                         subprocess.run(["rm", "-rf", "MenuBarSchedule.app.zip"])
-                        rumps.alert(
+                        show_error(
                             title="Update Failed",
                             message="Failed to install the update."
                         )
         except requests.exceptions.ConnectionError:
-            rumps.alert(
+            show_error(
                 title="Connection Error",
                 message="An unexpected error occured!"
             )
@@ -112,7 +147,7 @@ class Updater():
                         zip_ref.extractall(".")
                     os.remove("schedules.zip")
                     if show_alerts:
-                        rumps.alert(
+                        show_info(
                             title="Update Successful",
                             message="Successfully updated schedules."
                         )
@@ -120,7 +155,7 @@ class Updater():
                 except:
                     shutil.rmtree("./schedules/")
                     os.remove("schedules.zip")
-                    rumps.alert(
+                    show_error(
                         title="Update Failed",
                         message="Failed to update schedules."
                     )
@@ -143,7 +178,7 @@ class Updater():
                     schedules_metadata_url = asset["browser_download_url"]
 
             if not (schedules_present and schedules_metadata_present):
-                rumps.alert(
+                show_error(
                     title="Cannot Update Schedules",
                     message=f"Either the schedule files or schedule metadata are not present."
                 )
@@ -165,41 +200,41 @@ class Updater():
                         is_schedule_update = True
 
             if force_install and is_app_version_same:
-                download_schedules = rumps.alert(
+                download_schedules = askokcancel(
                     title="Schedules Not Found",
                     message="Schedules are required for Menu Bar Schedule to function.\nInstall schedules?",
-                    cancel=True,
+                    cancel="Cancel",
                     ok="Install"
                 )
                 if not download_schedules:
                     return False
             elif is_schedule_update and is_app_version_same:
-                update = rumps.alert(
+                update = askokcancel(
                     title="Schedule Updates Available",
                     message=f"A schedule update is available.\nInstall the update?",
-                    cancel=True,
+                    cancel="Cancel",
                     ok="Update"
                 )
                 if not update:
                     return False
             elif is_schedule_update and not is_app_version_same and is_later_app_version:
-                rumps.alert(
+                show_error(
                     title="Cannot Update Schedules",
                     message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
                 )
                 return False
             elif is_schedule_update and not is_app_version_same and not is_later_app_version:
-                continue_update = rumps.alert(
+                continue_update = askokcancel(
                     title="Schedule Updates Available",
                     message=f"A schedule update is available, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
-                    cancel=True,
+                    cancel="Cancel",
                     ok="Update"
                 )
                 if not continue_update:
                     return False
             else:
                 if show_alerts:
-                    rumps.alert(
+                    show_info(
                         title="You're Up to Date",
                         message=f"You're on the latest available schedule version."
                     )
@@ -207,13 +242,13 @@ class Updater():
 
             return self.install_schedules_core(session, releases, show_alerts)
         except requests.exceptions.ConnectionError:
-            rumps.alert(
+            show_error(
                 title="Connection Error",
                 message="An unexpected error occured!"
             )
             return False
         except ValueError:
-            rumps.alert(
+            show_error(
                 title="Cannot Update Schedules",
                 message=f"The schedule metadata seems to be corrupt."
             )
