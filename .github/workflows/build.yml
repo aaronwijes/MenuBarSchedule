@@ -75,7 +75,7 @@ jobs:
     steps:
       - name: Build schedules
         run: |
-          zip -q -r schedules.zip . -i schedules/
+          zip -r schedules.zip schedules/
 
       - name: Upload schedules
         uses: actions/upload-artifact@v7
