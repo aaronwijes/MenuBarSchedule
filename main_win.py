@@ -103,6 +103,7 @@ class MenuBarSchedule(pystray.Icon):
                 else:
                     icon_text = self.title.replace("No Schedule", "MBS").replace(" ", "\n")
                 self.icon = self.create_image(icon_text)
+                self.update_menu()
         else:
             proposed_title, notification_title, notification_message = self.common.update_time_left(day_is_off)
             if notification_title != "" and notification_message != None:
@@ -117,6 +118,7 @@ class MenuBarSchedule(pystray.Icon):
                 else:
                     icon_text = self.title.replace("No Schedule", "MBS").replace(" ", "\n")
                 self.icon = self.create_image(icon_text)
+                self.update_menu()
 
         if self.is_running and continue_thread:
             self.timer = threading.Timer(interval=1.0, function=self.update_time_left)
