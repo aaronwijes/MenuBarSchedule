@@ -75,15 +75,11 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v7
 
-      - name: Build schedules
-        run: |
-          zip -r schedules.zip schedules/*
-
       - name: Upload schedules
         uses: actions/upload-artifact@v7
         with:
           name: schedules.zip
-          path: schedules.zip
+          path: schedules
     
       - name: Upload schedule metadata
         uses: actions/upload-artifact@v7
