@@ -47,7 +47,7 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="Quit", action=self.stop)
         )
 
-        self.refresh_schedules()
+        self.refresh_schedules(force_load_json=True)
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
 
@@ -84,13 +84,13 @@ class MenuBarSchedule(pystray.Icon):
 
     def select_option_pack(self, icon, item):
         self.common.select_pack(item.text)
-        self.refresh_schedules()
+        self.refresh_schedules(force_load_json=False)
 
     def toggle_settings(self, icon, item):
         self.common.toggle_settings(item.text)
 
         if item.text == "Set Schedule Based on Calendar":
-            self.refresh_schedules()
+            self.refresh_schedules(force_load_json=False)
 
     def update_time_left(self, continue_thread=True):
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
@@ -122,8 +122,8 @@ class MenuBarSchedule(pystray.Icon):
             self.timer = threading.Timer(interval=1.0, function=self.update_time_left)
             self.timer.start()
 
-    def refresh_schedules(self):
-        if not self.common.schedule_dir_exists():
+    def refresh_schedules(self, force_load_json=True):
+        if not self.common.schedule_dir_exists(force_load_json=force_load_json):
             self.pack_items = {"NONE": Item(text="No Packs Found", action=False)}
             self.schedule_items = {"NONE": Item(text="No Schedules Found", action=False)}
             return
@@ -162,7 +162,7 @@ class MenuBarSchedule(pystray.Icon):
 
     def update_schedules_thread(self):
         if self.common.update_schedules(True):
-            self.refresh_schedules(None)
+            self.refresh_schedules(force_load_json=True)
 
     def update_schedules(self, sender):
         threading.Thread(target=self.update_schedules_thread, daemon=True).start()
