@@ -52,7 +52,6 @@ jobs:
           mkdir ./dist/MenuBarSchedule/resources/
           copy ./resources/Gidole-Regular.ttf ./dist/MenuBarSchedule/resources/Gidole-Regular.ttf
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
-          Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
@@ -66,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: MenuBarSchedule.zip
-          path: dist/MenuBarSchedule.zip
+          path: dist/MenuBarSchedule
 
   upload-schedules:
     runs-on: ubuntu-latest
