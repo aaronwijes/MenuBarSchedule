@@ -149,6 +149,9 @@ class MenuBarSchedule(pystray.Icon):
                     icon_text = self.title.replace("No Schedule", "MBS").replace(" ", "\n")
                 self.icon = self.create_image(icon_text)
 
+        if use_calendar and old_schedule_id != schedule_id:
+            self.update_menu()
+
         if self.is_running and continue_thread and platform.system() == "Windows":
             self.start_timer()
 
