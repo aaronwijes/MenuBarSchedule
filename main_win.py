@@ -173,7 +173,7 @@ class MenuBarSchedule(pystray.Icon):
         self.schedule_options, selected_schedule_id, set_schedule_based_on_calendar = self.common.load_schedules()
         if self.schedule_options != {}:
             self.schedule_items = {
-                id: pystray.MenuItem(text=name, action=self.select_option_schedule, checked=lambda item, id=id: (self.common.settings["selected_schedule_id"] == id))
+                id: pystray.MenuItem(text=name, action=self.select_option_schedule, checked=lambda item, id=id: (self.common.settings["selected_schedule_id"] == id), enabled=lambda item: (self.common.settings["set_schedule_based_on_calendar"] == False))
                 for id, name in self.schedule_options.items()
             }
 
