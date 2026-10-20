@@ -306,7 +306,7 @@ class MBSCommonFunctions():
 
     def about(self):
         title = "About"
-        message = f"Menu Bar Schedule shows how much time is left until your next class/event!\n\nVersion {VERSION}\nCreated by Aaron (GitHub: https://github.com/{GITHUB_USERNAME})"
+        message = f"Menu Bar Schedule shows how much time is left until your next class/event!\n\nVersion {VERSION}\nCreated by Aaron with <3\nhttps://github.com/{GITHUB_USERNAME}"
 
         return title, message
 

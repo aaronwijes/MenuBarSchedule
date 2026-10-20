@@ -51,8 +51,8 @@ app = BUNDLE(
     info_plist={
         'CFBundleDisplayName': 'MenuBarSchedule',
         'CFBundleName': 'MenuBarSchedule',
-        'CFBundleShortVersionString': '3.3.0',
-        'CFBundleVersion': '3.3.0',
+        'CFBundleShortVersionString': '3.4.0',
+        'CFBundleVersion': '3.4.0',
         'LSUIElement': True,
         'NSHighResolutionCapable': True,
     },
