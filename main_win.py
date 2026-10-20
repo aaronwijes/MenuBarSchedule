@@ -1,4 +1,5 @@
 import os
+import time
 import pystray
 import threading
 from pathlib import Path
@@ -93,6 +94,9 @@ class MenuBarSchedule(pystray.Icon):
             self.refresh_schedules(force_load_json=False)
 
     def update_time_left(self, continue_thread=True):
+        if not self.is_running:
+            return
+
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
 
         if proposed_title != "":
