@@ -52,7 +52,7 @@ jobs:
           mkdir ./dist/MenuBarSchedule/resources/
           copy ./resources/Gidole-Regular.ttf ./dist/MenuBarSchedule/resources/Gidole-Regular.ttf
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
-          tar -caf ./dist/MenuBarSchedule.zip ./dist/MenuBarSchedule
+          Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
