@@ -73,6 +73,9 @@ jobs:
     needs: build
 
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v7
+
       - name: Build schedules
         run: |
           zip -r schedules.zip schedules/
@@ -97,14 +100,20 @@ jobs:
       contents: write
 
     steps:
-      - name: Release
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Create release
         uses: softprops/action-gh-release@v3
         if: github.ref_type == 'tag'
         with:
           files: |
             dist/MenuBarSchedule.app.zip
+            dist/MenuBarSchedule.zip
             dist/schedules.zip
-            schedules/metadata.json
+            dist/metadata.json
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
