@@ -108,8 +108,8 @@ jobs:
         with:
           files: |
             dist/MenuBarSchedule.app.zip
-            dist/MenuBarSchedule.zip
-            dist/schedules.zip
+            dist/MenuBarSchedule
+            dist/schedules
             dist/metadata.json
           generate_release_notes: true
         env:
