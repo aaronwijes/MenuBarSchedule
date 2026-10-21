@@ -100,6 +100,12 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           path: dist/
+
+      - name: Zip artifacts
+        if: github.ref_type == 'tag'
+        run: |
+          zip -r schedules.zip dist/schedules.zip/*
+          zip -r MenuBarSchedule.zip dist/MenuBarSchedule.zip/*
         
       - name: Create release
         uses: softprops/action-gh-release@v3
@@ -107,8 +113,8 @@ jobs:
         with:
           files: |
             dist/MenuBarSchedule.app.zip
-            dist/MenuBarSchedule.zip/
-            dist/schedules.zip/
+            MenuBarSchedule.zip
+            schedules.zip
             dist/metadata.json
           generate_release_notes: true
         env:
