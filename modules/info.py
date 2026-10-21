@@ -1,4 +1,4 @@
-VERSION = "3.4.3"
+VERSION = "3.4.4"
 VERSION_LIST = [int(component) for component in VERSION.split(".")]
 
 REPO_NAME = "MenuBarSchedule"
