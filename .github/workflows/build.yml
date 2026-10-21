@@ -52,11 +52,13 @@ jobs:
           mkdir ./dist/MenuBarSchedule/resources/
           copy ./resources/Gidole-Regular.ttf ./dist/MenuBarSchedule/resources/Gidole-Regular.ttf
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
+          Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v7
         with:
+          archive: false
           name: MenuBarSchedule.app.zip
           path: dist/MenuBarSchedule.app.zip
 
@@ -64,8 +66,9 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v7
         with:
+          archive: false
           name: MenuBarSchedule.zip
-          path: dist/MenuBarSchedule
+          path: dist/MenuBarSchedule.zip
 
   upload-schedules:
     runs-on: ubuntu-latest
@@ -75,15 +78,21 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v7
 
+      - name: Build schedules
+        run: |
+          zip -r schedules.zip schedules/*
+
       - name: Upload schedules
         uses: actions/upload-artifact@v7
         with:
+          archive: false
           name: schedules.zip
-          path: schedules
+          path: schedules.zip
     
       - name: Upload schedule metadata
         uses: actions/upload-artifact@v7
         with:
+          archive: false
           name: metadata.json
           path: schedules/metadata.json
 
@@ -96,16 +105,12 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         if: github.ref_type == 'tag'
         with:
           path: dist/
-
-      - name: Zip artifacts
-        if: github.ref_type == 'tag'
-        run: |
-          zip -r schedules.zip dist/schedules.zip/*
-          zip -r MenuBarSchedule.zip dist/MenuBarSchedule.zip/*
+          skip-decompress: true
+          merge-multiple: true
         
       - name: Create release
         uses: softprops/action-gh-release@v3
@@ -113,8 +118,8 @@ jobs:
         with:
           files: |
             dist/MenuBarSchedule.app.zip
-            MenuBarSchedule.zip
-            schedules.zip
+            dist/MenuBarSchedule.zip
+            dist/schedules.zip
             dist/metadata.json
           generate_release_notes: true
         env:
