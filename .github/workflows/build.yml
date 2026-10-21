@@ -97,20 +97,22 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
-        if: github.ref_type == 'tag'
         with:
           path: dist/
-          merge-multiple: true
 
+      - name: Show files
+        run: |
+          ls dist/
+        
       - name: Create release
         uses: softprops/action-gh-release@v3
         if: github.ref_type == 'tag'
         with:
           files: |
-            dist/MenuBarSchedule.app.zip
+            dist/MenuBarSchedule.app.zip/MenuBarSchedule.app.zip
             dist/MenuBarSchedule
             dist/schedules
-            dist/metadata.json
+            dist/metadata.json/metadata.json
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
