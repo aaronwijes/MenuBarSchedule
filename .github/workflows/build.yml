@@ -102,7 +102,7 @@ jobs:
 
       - name: Show files
         run: |
-          ls dist/
+          ls -la dist/
         
       - name: Create release
         uses: softprops/action-gh-release@v3
