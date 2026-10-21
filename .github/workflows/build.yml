@@ -103,15 +103,17 @@ jobs:
       - name: Show files
         run: |
           ls -la dist/
+          ls -la dist/schedules.zip
+          ls -la dist/MenuBarSchedule.zip
         
       - name: Create release
         uses: softprops/action-gh-release@v3
         if: github.ref_type == 'tag'
         with:
           files: |
-            dist/MenuBarSchedule.app.zip/MenuBarSchedule.app.zip
-            dist/MenuBarSchedule
-            dist/schedules
+            dist/MenuBarSchedule.app.zip
+            dist/MenuBarSchedule.zip/MenuBarSchedule
+            dist/schedules.zip/schedules
             dist/metadata.json/metadata.json
           generate_release_notes: true
         env:
