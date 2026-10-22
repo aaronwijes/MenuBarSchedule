@@ -199,7 +199,10 @@ class MenuBarSchedule(pystray.Icon):
             self.refresh_schedules(force_load_json=True)
 
     def update_schedules(self, sender):
-        threading.Thread(target=self.update_schedules_thread, daemon=True).start()
+        if platform.system() == "Windows":
+            threading.Thread(target=self.update_schedules_thread, daemon=True).start()
+        elif platform.system() == "Darwin":
+            self.update_schedules_thread()
 
     def about(self, sender):
         title, message = self.common.about()
