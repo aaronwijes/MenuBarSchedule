@@ -122,7 +122,7 @@ class MBSCommonFunctions():
 
     def get_daily_schedule(self, calendar, schedule_options, now):
         if f"{now.month}/{now.day}/{now.year}" in calendar["exceptions"].keys():
-            if calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["schedule_id"] in schedule_options.keys():
+            if calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["id"] in schedule_options.keys():
                 schedule_name = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["name"]
                 schedule_id = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["id"]
         elif calendar["default"]["id"] in schedule_options.keys():
