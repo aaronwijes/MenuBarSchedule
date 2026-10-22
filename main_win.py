@@ -1,4 +1,5 @@
 import os
+import sys
 import pystray
 import platform
 import threading
@@ -208,7 +209,11 @@ class MenuBarSchedule(pystray.Icon):
         )
 
 if __name__ == "__main__":
-    font_path = Path(os.getcwd()) / "resources" / "Gidole-Regular.ttf"
+    if getattr(sys, "frozen", False):
+        font_path = Path(sys.executable).resolve().parent / "resources" / "Gidole-Regular.ttf"
+    else:
+        font_path = Path(__file__).resolve().parent / "resources" / "Gidole-Regular.ttf"
+
     database = Database()
     updater = Updater(database)
     common = MBSCommonFunctions(database, updater)
