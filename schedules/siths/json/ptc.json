@@ -25,6 +25,11 @@
       "start": "11:06 AM",
       "end": "11:47 AM",
       "name": "Period 9"
+    },
+    "LUN": {
+      "start": "11:51 AM",
+      "end": "12:30 PM",
+      "name": "Lunch"
     }
   }
 }

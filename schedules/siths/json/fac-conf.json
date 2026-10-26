@@ -45,6 +45,11 @@
       "start": "1:09 PM",
       "end": "1:43 PM",
       "name": "Period 9"
+    },
+    "FC": {
+      "start": "1:47 PM",
+      "end": "2:47 PM",
+      "name": "Faculty Conference"
     }
   }
 }
