@@ -10,7 +10,7 @@ from datetime import datetime
 class SITHSParser():
     def __init__(self):
         self.pack_id = "siths"
-        self.source_url = "https://docs.google.com/document/d/1tWuGMQiozVi_5sD5Gh2AuUA33sc5ioHV3_2t4ekDnZc/edit?tab=t.0#heading=h.nvtvl7yw9tcx"
+        self.source_url = "https://docs.google.com/document/d/1tWuGMQiozVi_5sD5Gh2AuUA33sc5ioHV3_2t4ekDnZc/export?gid=0&format=md"
 
         self.calendar = ""
         self.calendar_events = []
@@ -60,8 +60,7 @@ class SITHSParser():
     def prompt_download(self):
         webbrowser.open(self.source_url)
         print(f"Pack ID: {self.pack_id}")
-        print(f"Download calendar as markdown: {self.source_url}")
-        print("Waiting for download...")
+        print(f"Downloading calendar as markdown: {self.source_url}")
         while not os.path.exists(os.path.expanduser("~/Downloads/2026-27 Google Calendar (*This is a Fluid Document).md")):
             time.sleep(0.2)
         self.calendar = open(os.path.expanduser("~/Downloads/2026-27 Google Calendar (*This is a Fluid Document).md")).readlines()
@@ -94,6 +93,7 @@ class SITHSParser():
             self.calendar_obj["exceptions"][event[0]] = schedule
 
         open(f"./schedules/{self.pack_id}/calendar.json", "w").write(json.dumps(self.calendar_obj, indent=2))
+        print(f"Added {len(list(self.calendar_obj["exceptions"].keys()))} exception dates to {self.pack_id}'s calendar.json")
         print("Success")
 
 parser = SITHSParser()
