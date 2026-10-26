@@ -6,25 +6,36 @@
 
 Menu Bar Schedule shows how much time is left until your next class or event starts/ends.
 
-<img width="479" height="320" alt="Pasted 2026-10-09 at 9 54 32 PM" src="https://github.com/user-attachments/assets/24d86454-303b-473e-ba07-3ff8c24d8384" />
-
-## Current Features
-* See how much time is left until your next class/event
-* Select between 10+ schedule variants (Only [SITHS](https://siths.org) is included for now, but adding your own schedules is easy!)
-* See your schedule timetable in detail
-* Install schedule updates without updating the entire app
-* Check for updates on app startup
-* Automatically set the correct schedule with a calendar (may not work with all schedule packs)
+<img width="479" height="320" alt="Menu Bar Schedule - Demo" src="https://github.com/user-attachments/assets/24d86454-303b-473e-ba07-3ff8c24d8384" />
 
 ## How to Use
-1. Download MenuBarSchedule.app.zip from the latest GitHub Release
-2. If Gatekeeper blocks the app from running, go to *Settings > Privacy and Security > click Open Anyway*
-3. Download schedules when prompted
-4. Select the schedule you want to follow!
+**Install the app:**
+* Windows: Download and extract `MenuBarSchedule.zip` to any folder before running the app.
+* macOS: Download and extract `MenuBarSchedule.app.zip` and drag the .app file into the Applications folder. (If Gatekeeper blocks the app from running, go to *Settings > Privacy and Security > click Open Anyway*.)
+
+**Regardless of your operating system:**
+* Download schedules when prompted
+* Select the schedule you want to follow!
+
+## Features
+**Schedule countdowns** - This is the main feature of the app! Make sure that both a school and schedule are selected to see the countdown in your menu bar.
+
+**Selecting a school** - This shows the respective school’s schedules for selection. To select a school, go to *Configure Schedule Packs* > click the desired school. You may only have one school selected at a time.
+
+**Selecting a schedule** - This sets the schedule which is used to calculate countdowns. To select a schedule, go to *Change Schedule* > click the desired schedule. The underlying menu is disabled when the *Set Schedule Based on Calendar* feature is enabled (see below).
+
+**Viewing a schedule’s timetable** - This shows the selected schedule’s timetable. To view the current schedule, click *View Current Schedule*.
+
+**Automatic schedule setting** - This sets the schedule automatically depending on the date. To enable/disable this feature, go to *Settings* > click *Set Schedule Based on Calendar*. Subject to the currently selected school’s support for a school calendar.
+
+## Updates
+On macOS, you can check for and install app updates by clicking *Check for App Updates*. This option exists on Windows, but does nothing when clicked. You must download app updates manually on Windows.
+
+On both macOS and Windows, you can check for and install schedule updates by clicking *Check for Schedule Updates*. Make sure to check for schedule updates at least once a week!
 
 ## Building From Source
 Install Python 3.15.x and install all of the modules in requirements.txt.<br>
-Then, build the app using PyInstaller: `pyinstaller ./resources/mac.spec` or `pyinstaller ./resources/win.spec`
+Then, build the app using PyInstaller: `pyinstaller ./resources/macos.spec` or `pyinstaller ./resources/win.spec`
 
-To test your own schedule packs, make your changes and move the `/schedules` directory to `~/Library/Application Support/MenuBarSchedule/schedules`.<br>
-You can reload schedule packs without restarting the app by clicking *Settings > Refresh Schedules from JSON*.
+To test your own schedule packs, make your changes and move the `/schedules` directory to `~/Library/Application Support/MenuBarSchedule/schedules` or `%LOCALAPPDATA%\aaronwijes\MenuBarSchedule\schedules` depending on your operating system.<br>
+You can reload schedule packs by clicking *Settings > Refresh Schedules from JSON*.
