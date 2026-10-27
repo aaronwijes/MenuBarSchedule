@@ -1,16 +1,20 @@
 import os
-import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 from platformdirs import user_config_dir
 from .info import REPO_NAME, GITHUB_USERNAME
+from supabase import create_client, Client
 
 class Database():
     def __init__(self):
         self.database_dir = Path(user_config_dir(REPO_NAME, GITHUB_USERNAME))
         self.database_dir.mkdir(parents=True, exist_ok=True)
         self.database_path = f"{self.database_dir}/data.db"
+
+        self.url: str = "https://fhswspxqmwffxpbwcyik.supabase.co"
+        self.key: str = "sb_publishable_ttXyIjhBhl6fIAvcOddqWA_imqtCPXK"
+        self.supabase: Client = create_client(self.url, self.key)
         
         self.default_config = {
             "config_version": 1,
@@ -95,6 +99,7 @@ class Database():
                 schedule_id TEXT,
                 is_default INT,
                 exception_date TEXT,
+                calendar_format_version INT DEFAULT 1,
                 PRIMARY KEY (calendar_id, pack_id, exception_date)
             );
         """)
@@ -105,9 +110,25 @@ class Database():
                 calendar_name TEXT,
                 pack_id TEXT,
                 off_day INT,
+                calendar_format_version INT DEFAULT 1,
                 PRIMARY KEY (calendar_id, pack_id, off_day)
             );
         """)
+
+        # Migration code from MBS <=3.4.7
+        try:
+            cursor.execute("""
+                ALTER TABLE online_calendars
+                ADD calendar_format_version INT DEFAULT 1;
+            """)
+
+            cursor.execute("""
+                ALTER TABLE online_calendars_off_days
+                ADD calendar_format_version INT DEFAULT 1;
+            """)
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" in str(e):
+                pass
 
         self.conn.commit()
 
@@ -348,31 +369,64 @@ class Database():
         """)
         self.conn.commit()
 
-    def convert_schedule_jsons_to_sql(self):
-        schedule_path = Path(self.database_dir) / "schedules"
-        if schedule_path.exists():
-            metadata = Path(self.database_dir) / "schedules" / "metadata.json"
-            metadata_json = json.loads(metadata.read_text())
-            self.remove_all_online_calendars()
-            self.remove_all_online_schedule_packs()
-            for pack_id, pack_obj in metadata_json.items():
-                self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
-                schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
-                calendar_path = schedule_json_path / ".." / "calendar.json"
+    def download_schedule_packs_from_sb(self):
+        return (
+            self.supabase.table("online_schedule_packs")
+            .select("*")
+            .execute()
+        ).data
 
-                for schedule_json in schedule_json_path.glob("*.json"):
-                    schedule = json.loads((schedule_json.read_text()))
-                    for i, (period_id, period) in enumerate(schedule["schedule"].items(), start=1):
-                        period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
-                        period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
-                        self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"], i)
+    def download_online_schedules_from_sb(self):
+        schedules = (
+            self.supabase.table("online_schedules")
+            .select("*")
+            .execute()
+        )
+        schedule_packs = (
+            self.supabase.table("online_schedule_packs")
+            .select("*")
+            .execute()
+        )
+        schedule_calendars = (
+            self.supabase.table("online_calendars")
+            .select("*")
+            .execute()
+        )
 
-                if calendar_path.exists():
-                    calendar = json.loads((calendar_path.read_text()))
-                    default_schedule_id = self.get_online_schedule_id(pack_id, calendar["default"])
-                    self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], default_schedule_id, 1, "")
-                    for key, value in calendar["exceptions"].items():
-                        exception_schedule_id = self.get_online_schedule_id(pack_id, calendar["exceptions"][key])
-                        self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, value, exception_schedule_id, 0, key)
-                    for day_int in calendar["off_days"]:
-                        self.add_online_calendar_off_date("calendar", pack_obj["pack_name"], pack_id, day_int)
+        self.remove_all_online_schedule_packs()
+        self.remove_all_online_calendars()
+        for row in schedules.data:
+            self.add_online_schedule(row["pack_id"], row["schedule_id"], row["schedule_name"], row["period_id"], row["period_name"], row["start_time"], row["end_time"], row["insertion_order"])
+        for row in schedule_packs.data:
+            self.add_online_schedule_pack(row["pack_id"], row["pack_name"], row["pack_version"])
+        for row in schedule_calendars.data:
+            self.add_online_calendar(row["calendar_id"], row["calendar_name"], row["pack_id"], row["schedule_name"], row["schedule_id"], row["is_default"], row["exception_date"])
+
+    # def convert_schedule_jsons_to_sql(self):
+    #     schedule_path = Path(self.database_dir) / "schedules"
+    #     if schedule_path.exists():
+    #         metadata = Path(self.database_dir) / "schedules" / "metadata.json"
+    #         metadata_json = json.loads(metadata.read_text())
+    #         self.remove_all_online_calendars()
+    #         self.remove_all_online_schedule_packs()
+    #         for pack_id, pack_obj in metadata_json.items():
+    #             self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
+    #             schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
+    #             calendar_path = schedule_json_path / ".." / "calendar.json"
+
+    #             for schedule_json in schedule_json_path.glob("*.json"):
+    #                 schedule = json.loads((schedule_json.read_text()))
+    #                 for i, (period_id, period) in enumerate(schedule["schedule"].items(), start=1):
+    #                     period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
+    #                     period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
+    #                     self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"], i)
+
+    #             if calendar_path.exists():
+    #                 calendar = json.loads((calendar_path.read_text()))
+    #                 default_schedule_id = self.get_online_schedule_id(pack_id, calendar["default"])
+    #                 self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], default_schedule_id, 1, "")
+    #                 for key, value in calendar["exceptions"].items():
+    #                     exception_schedule_id = self.get_online_schedule_id(pack_id, calendar["exceptions"][key])
+    #                     self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, value, exception_schedule_id, 0, key)
+    #                 for day_int in calendar["off_days"]:
+    #                     self.add_online_calendar_off_date("calendar", pack_obj["pack_name"], pack_id, day_int)

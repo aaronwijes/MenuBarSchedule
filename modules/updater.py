@@ -1,6 +1,3 @@
-import os
-import json
-import zipfile
 import platform
 from pathlib import Path
 from .database import Database
@@ -135,68 +132,25 @@ class Updater():
                 message="An unexpected error occured!"
             )
 
-    def install_schedules_core(self, session, releases, show_alerts=True):
-        for asset in releases[0]["assets"]:
-            if asset["name"] == "schedules.zip":
-                schedules_zip = download_file(session, asset["browser_download_url"])
-                open("schedules.zip", "wb").write(schedules_zip)
-                if Path("./schedules/").exists():
-                    shutil.rmtree("./schedules/")
-                try:
-                    with zipfile.ZipFile("schedules.zip", 'r') as zip_ref:
-                        zip_ref.extractall(".")
-                    os.remove("schedules.zip")
-                    if show_alerts:
-                        show_info(
-                            title="Update Successful",
-                            message="Successfully updated schedules."
-                        )
-                    return True
-                except:
-                    shutil.rmtree("./schedules/")
-                    os.remove("schedules.zip")
-                    show_error(
-                        title="Update Failed",
-                        message="Failed to update schedules."
-                    )
-                    return False
-        return False
-
     def update_schedules(self, show_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
             force_install = False
 
-            schedules_present = False
-            schedules_metadata_present = False
-            for asset in releases[0]["assets"]:
-                if asset["name"] == "schedules.zip":
-                    schedules_present = True
-                elif asset["name"] == "metadata.json":
-                    schedules_metadata_present = True
-                    schedules_metadata_url = asset["browser_download_url"]
-
-            if not (schedules_present and schedules_metadata_present):
-                show_error(
-                    title="Cannot Update Schedules",
-                    message=f"Either the schedule files or schedule metadata are not present."
-                )
-                return False
-
             is_app_version_same = releases[0]["tag_name"] == VERSION
             is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
 
             saved_metadata_json = self.database.get_all_online_schedule_packs()
-            current_metadata_json = json.loads(download_file(session, schedules_metadata_url).decode())
+            current_metadata_json = self.database.download_schedule_packs_from_sb()
 
             if saved_metadata_json == {}:
                 force_install = True
                 is_schedule_update = True
             else:
                 is_schedule_update = False
-                for id, metadata_obj in current_metadata_json.items():
-                    if saved_metadata_json.get(id, {"pack_version": 0})["pack_version"] < metadata_obj["pack_version"]:
+                for metadata_obj in current_metadata_json:
+                    if saved_metadata_json.get(metadata_obj["pack_id"], {"pack_version": 0})["pack_version"] < metadata_obj["pack_version"]:
                         is_schedule_update = True
 
             if force_install and is_app_version_same:
@@ -240,7 +194,20 @@ class Updater():
                     )
                 return False
 
-            return self.install_schedules_core(session, releases, show_alerts)
+            try:
+                self.database.download_online_schedules_from_sb()
+                if show_alerts:
+                    show_info(
+                        title="Update Successful",
+                        message="Successfully updated schedules."
+                    )
+                return True
+            except:
+                show_error(
+                    title="Update Failed",
+                    message="Failed to update schedules."
+                )
+                return False
         except requests.exceptions.ConnectionError:
             show_error(
                 title="Connection Error",

@@ -26,9 +26,7 @@ class MenuBarSchedule(rumps.App):
             "set_schedule_based_on_calendar": rumps.MenuItem(title="Set Schedule Based on Calendar", callback=self.toggle_settings),
             "NO_CONFIG_1": rumps.separator,
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
-            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings),
-            "NO_CONFIG_2": rumps.separator,
-            "NO_CONFIG_3": rumps.MenuItem(title="Refresh Schedules from JSON", callback=self.refresh_schedules),
+            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings)
         }
         for id, item in self.settings_items.items():
             if id in self.common.settings:

@@ -40,11 +40,7 @@ class MBSCommonFunctions():
                     self.database.set_value(key, "")
                 return False
 
-        if schedule_path.exists():
-            if force_load_json:
-                self.database.convert_schedule_jsons_to_sql()
-            return True
-        elif self.database.get_all_online_schedule_packs() != {}:
+        if self.database.get_all_online_schedule_packs() != {}:
             return True
         else:
             return False

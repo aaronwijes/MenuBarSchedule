@@ -37,8 +37,6 @@ class MenuBarSchedule(pystray.Icon):
             pystray.Menu.SEPARATOR,
             Item(text="Check for App Updates on Startup", action=self.toggle_settings, checked=lambda item: self.common.settings["check_app_updates_on_startup"]),
             Item(text="Check for Schedule Updates on Startup", action=self.toggle_settings, checked=lambda item: self.common.settings["check_schedule_updates_on_startup"]),
-            pystray.Menu.SEPARATOR,
-            Item(text="Refresh Schedules from JSON", action=self.refresh_schedules),
         )
 
         self.menu = (
