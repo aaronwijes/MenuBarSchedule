@@ -157,8 +157,8 @@ class MenuBarSchedule(pystray.Icon):
 
     def refresh_schedules(self, force_load_json=True):
         if not self.common.schedule_dir_exists(force_load_json=force_load_json):
-            self.pack_items = {"NONE": Item(text="No Packs Found", action=False)}
-            self.schedule_items = {"NONE": Item(text="No Schedules Found", action=False)}
+            self.pack_items = {"NONE": Item(text="No Packs Found", action=None, enabled=False)}
+            self.schedule_items = {"NONE": Item(text="No Schedules Found", action=None, enabled=False)}
             return
 
         self.pack_options, selected_pack_id = self.common.load_packs()
@@ -168,7 +168,7 @@ class MenuBarSchedule(pystray.Icon):
                 for id, name in self.pack_options.items()
             }
         else:
-            self.pack_items = {"NONE": Item(text="No Packs Found", action=False)}
+            self.pack_items = {"NONE": Item(text="No Packs Found", action=None, enabled=False)}
 
         self.schedule_options, selected_schedule_id, set_schedule_based_on_calendar = self.common.load_schedules()
         if self.schedule_options != {}:
@@ -180,7 +180,7 @@ class MenuBarSchedule(pystray.Icon):
             if selected_schedule_id != "":
                 self.update_time_left(continue_thread=False)
         else:
-            self.schedule_items = {"NONE": Item(text="No Schedules Found", action=False)}
+            self.schedule_items = {"NONE": Item(text="No Schedules Found", action=None, enabled=False)}
 
     def view_schedule(self, sender):
         title, message = self.common.view_schedule()
