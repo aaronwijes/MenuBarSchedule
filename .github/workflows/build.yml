@@ -54,6 +54,12 @@ jobs:
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
           Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
+      - name: Compile .ISS to .EXE Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: resources/setup.iss
+          options: /O+
+
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v7
@@ -70,11 +76,13 @@ jobs:
           name: MenuBarSchedule.zip
           path: dist/MenuBarSchedule.zip
 
-      - name: Compile .ISS to .EXE Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      - name: Upload .exe installer (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v7
         with:
-          path: resources/setup.iss
-          options: /O+
+          archive: false
+          name: MenuBarSchedule*.exe
+          path: resources/Output/MenuBarSchedule*.exe
 
   upload-schedules:
     runs-on: ubuntu-latest
@@ -127,6 +135,7 @@ jobs:
             dist/MenuBarSchedule.zip
             dist/schedules.zip
             dist/metadata.json
+            dist/MenuBarSchedule*.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
