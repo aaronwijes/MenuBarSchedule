@@ -71,6 +71,8 @@ class MenuBarSchedule(rumps.App):
 
         if sender.title == "Set Schedule Based on Calendar":
             self.refresh_schedules(None)
+        elif sender.title == "Open at Login":
+            self.common.toggle_login_item()
 
     def update_time_left(self, sender):
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()

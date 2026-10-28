@@ -1,9 +1,39 @@
+import os
+import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from platform import system
 from .database import Database
 from .updater import Updater
 from .info import VERSION, GITHUB_USERNAME
+
+MBS_LAUNCHD_PLIST = """
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>org.aaron.menubarschedule</string>
+
+        <key>ProgramArguments</key>
+        <array>
+            <string>/Applications/MenuBarSchedule.app</string>
+        </array>
+
+        <key>RunAtLoad</key>
+        <true/>
+        
+        <key>KeepAlive</key>
+        <true/>
+        
+        <key>StandardOutPath</key>
+        <string>/tmp/menubarschedule.log</string>
+        
+        <key>StandardErrorPath</key>
+        <string>/tmp/menubarschedule.log</string>
+    </dict>
+</plist>
+"""
 
 class MBSCommonFunctions():
     def __init__(self, database: Database, updater: Updater):
@@ -25,7 +55,8 @@ class MBSCommonFunctions():
             "selected_online_pack",
             "selected_online_pack_id",
             "selected_schedule",
-            "selected_schedule_id"
+            "selected_schedule_id",
+            "open_at_login"
         ]
         for key in self.settings_keys:
             self.settings[key] = self.database.fetch_value(key)
@@ -171,7 +202,8 @@ class MBSCommonFunctions():
             "Shorten Title": "use_shorthand",
             "Hide Seconds Unit (>1 min)": "hide_seconds",
             "Show Notifications Before Period Ends": "show_almost_end_notifs",
-            "Set Schedule Based on Calendar": "set_schedule_based_on_calendar"
+            "Set Schedule Based on Calendar": "set_schedule_based_on_calendar",
+            "Open at Login": "open_at_login"
         }
         if title in cfg_lookup:
             config_key = cfg_lookup[title]
@@ -319,3 +351,21 @@ class MBSCommonFunctions():
 
     def update_schedules(self, show_alerts):
         return self.updater.update_schedules(show_alerts)
+
+    def toggle_login_item(self):
+        if system() == "Darwin":
+            uid = os.getuid()
+            paths = {
+                "autopatcher_plist": os.path.expanduser("~/Library/LaunchAgents/org.aaron.menubarschedule.plist")
+            }
+            if self.settings["open_at_login"]:
+                Path(paths["autopatcher_plist"]).write_text(MBS_LAUNCHD_PLIST)
+                subprocess.run(["chmod", "644", paths["autopatcher_plist"]])
+                subprocess.run(["launchctl", "bootout", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                subprocess.run(["launchctl", "bootout", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if Path(paths["autopatcher_plist"]).exists():
+                    os.remove(paths["autopatcher_plist"])
+        elif system() == "Windows":
+            return

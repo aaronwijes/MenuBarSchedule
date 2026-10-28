@@ -24,6 +24,7 @@ class Database():
             "check_app_updates_on_startup": 0,
             "check_schedule_updates_on_startup": 0,
             "set_schedule_based_on_calendar": 0,
+            "open_at_login": 0,
             "selected_schedule": "",
             "selected_schedule_id": "",
             "selected_online_pack": "",
