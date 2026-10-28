@@ -55,6 +55,7 @@ jobs:
           Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
       - name: Compile .ISS to .EXE Installer
+        if: matrix.os == 'windows-latest'
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: resources/setup.iss
