@@ -7,7 +7,7 @@ a = Analysis(
     pathex=[],
     binaries=[
         (
-            str(Path(sys.base_prefix) / "abi3t_compat" / "python3t.dll"),
+            str(Path(sys.base_prefix) / "abi3t-compat" / "python3t.dll"),
             "."
         )
     ],
