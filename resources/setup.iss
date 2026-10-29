@@ -29,7 +29,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; \
     Description: "Create a desktop shortcut"; \
-    GroupDescription: "Additional shortcuts:"; \
+    GroupDescription: "Additional options:"; \
     Flags: unchecked
 
 Name: "autostarticon"; \
