@@ -346,8 +346,7 @@ class MBSCommonFunctions():
             self.update_schedules(False)
 
     def update_app(self, show_alerts):
-        if system() == "Darwin":
-            return self.updater.update_app_macos(show_alerts)
+        return self.updater.update_app_macos(show_alerts)
 
     def update_schedules(self, show_alerts):
         return self.updater.update_schedules(show_alerts)

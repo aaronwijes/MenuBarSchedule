@@ -100,6 +100,11 @@ class Updater():
             if not update:
                 return
 
+            if OPSYS == "Windows":
+                import webbrowser
+                webbrowser.open(f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/releases/tag/{releases[0]["tag_name"]}")
+                return
+
             for asset in releases[0]["assets"]:
                 if "MenuBarSchedule.app.zip" == asset["name"]:
                     app_darwin = download_file(session, asset["browser_download_url"])
