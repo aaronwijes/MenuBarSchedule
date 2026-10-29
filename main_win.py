@@ -1,4 +1,5 @@
 import sys
+import ctypes
 import pystray
 import platform
 import threading
@@ -8,13 +9,6 @@ from modules.updater import Updater
 from modules.common import MBSCommonFunctions
 from pystray import Menu, MenuItem as Item
 from PIL import Image, ImageDraw, ImageFont
-
-if platform.system() == "Darwin":
-    from Foundation import NSTimer, NSRunLoop
-    from Cocoa import NSRunLoopCommonModes
-    import rumps
-elif platform.system() == "Windows":
-    import ctypes
 
 class MenuBarSchedule(pystray.Icon):
     def __init__(self, common: MBSCommonFunctions, font_path: str):
@@ -57,32 +51,11 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
 
-        self.start_timer()
-
-    def start_timer(self):
-        if platform.system() == "Windows":
-            self.timer = threading.Timer(1.0, self.update_time_left)
-            self.timer.start()
-        elif platform.system() == "Darwin":
-            self.timer = NSTimer.timerWithTimeInterval_repeats_block_(
-                1.0,
-                True,
-                lambda timer: self.update_time_left()
-            )
-
-            NSRunLoop.mainRunLoop().addTimer_forMode_(
-                self.timer,
-                NSRunLoopCommonModes
-            )
+        self.timer = threading.Timer(1.0, self.update_time_left)
+        self.timer.start()
 
     def show_info(self, title, message):
-        if platform.system() == "Windows":
-            threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
-        else:
-            rumps.alert(
-                title=title,
-                message=message
-            )
+        threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
 
     def create_image(self, text):
         font = ImageFont.truetype(self.font_path, size=24)
@@ -151,7 +124,8 @@ class MenuBarSchedule(pystray.Icon):
             self.update_menu()
 
         if self.is_running and continue_thread and platform.system() == "Windows":
-            self.start_timer()
+            self.timer = threading.Timer(1.0, self.update_time_left)
+            self.timer.start()
 
     def refresh_schedules(self, force_load_json=True):
         if not self.common.schedule_dir_exists(force_load_json=force_load_json):
@@ -187,19 +161,15 @@ class MenuBarSchedule(pystray.Icon):
             message=message
         )
 
-    def check_updates(self, sender):
-        if self.common.update_app(True) == "restart":
-            self.stop()
-
     def update_schedules_thread(self):
         if self.common.update_schedules(True):
             self.refresh_schedules(force_load_json=True)
 
+    def check_updates(self, sender):
+        threading.Thread(target=self.common.update_app, args=(True,), daemon=True).start()
+
     def update_schedules(self, sender):
-        if platform.system() == "Windows":
-            threading.Thread(target=self.update_schedules_thread, daemon=True).start()
-        elif platform.system() == "Darwin":
-            self.update_schedules_thread()
+        threading.Thread(target=self.update_schedules_thread, daemon=True).start()
 
     def about(self, sender):
         title, message = self.common.about()
