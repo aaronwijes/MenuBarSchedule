@@ -32,6 +32,11 @@ Name: "desktopicon"; \
     GroupDescription: "Additional shortcuts:"; \
     Flags: unchecked
 
+Name: "autostarticon"; \
+    Description: "Start application when Windows starts"; \
+    GroupDescription: "Additional options:"; \
+    Flags: unchecked
+
 [Files]
 Source: "..\dist\MenuBarSchedule\*"; \
     DestDir: "{app}"; \
@@ -44,6 +49,10 @@ Name: "{group}\MenuBarSchedule"; \
 Name: "{autodesktop}\MenuBarSchedule"; \
     Filename: "{app}\{#MyAppExeName}"; \
     Tasks: desktopicon
+
+Name: "{userstartup}\\{#MyAppName}"; \
+    Filename: "{app}\\{#MyAppExeName}"; \
+    Tasks: autostarticon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; \
