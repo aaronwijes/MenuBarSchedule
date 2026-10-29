@@ -1,10 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+import sys
+from pathlib import Path
 
 a = Analysis(
     ['main_win.py'],
     pathex=[],
-    binaries=[],
+    binaries=[
+        (
+            str(Path(sys.base_prefix) / "abi3t_compat" / "python3t.dll"),
+            "."
+        )
+    ],
     datas=[],
     hiddenimports=[],
     hookspath=[],
