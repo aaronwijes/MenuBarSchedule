@@ -80,5 +80,5 @@ function InitializeSetup: boolean;
 begin
   Result := not IsAppRunning('MenuBarSchedule.exe');
   if not Result then
-  MsgBox('Menu Bar Schedule is running. Please close the application before running the installer ', mbError, MB_OK);
+  MsgBox('Menu Bar Schedule is running. Please close the application before running the installer.', mbError, MB_OK);
 end;
