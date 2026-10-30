@@ -54,12 +54,20 @@ jobs:
           copy ./resources/FONT_LICENSE ./dist/MenuBarSchedule/resources/FONT_LICENSE
           Compress-Archive -Path "./dist/MenuBarSchedule/*" -DestinationPath "./dist/MenuBarSchedule.zip" -Force
 
+      - name: Install Inno Setup
+        if: matrix.os == 'windows-latest'
+        run: choco install innosetup -y
+
       - name: Compile .ISS to .EXE Installer
         if: matrix.os == 'windows-latest'
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        with:
-          path: resources/setup.iss
-          options: /O+
+        run: iscc.exe resources/setup.iss
+
+      # - name: Compile .ISS to .EXE Installer
+      #   if: matrix.os == 'windows-latest'
+      #   uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      #   with:
+      #     path: resources/setup.iss
+      #     options: /O+
 
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
