@@ -1,4 +1,4 @@
-#define MyAppName "MenuBarSchedule"
+#define MyAppName "Menu Bar Schedule"
 #define MyAppExeName "MenuBarSchedule.exe"
 #define MyAppVersion "4.0.0"
 
@@ -56,5 +56,29 @@ Name: "{userstartup}\\{#MyAppName}"; \
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; \
-    Description: "Launch MenuBarSchedule"; \
+    Description: "Launch Menu Bar Schedule"; \
     Flags: postinstall nowait skipifsilent
+
+[Code]
+function IsAppRunning(const FileName: string): Boolean;
+var
+  FWMIService: Variant;
+  FSWbemLocator: Variant;
+  FWbemObjectSet: Variant;
+begin
+  Result := false;
+  FSWbemLocator := CreateOleObject('WBEMScripting.SWBEMLocator');
+  FWMIService := FSWbemLocator.ConnectServer('', 'root\CIMV2', '', '');
+  FWbemObjectSet := FWMIService.ExecQuery(Format('SELECT Name FROM Win32_Process Where Name="%s"',[FileName]));
+  Result := (FWbemObjectSet.Count > 0);
+  FWbemObjectSet := Unassigned;
+  FWMIService := Unassigned;
+  FSWbemLocator := Unassigned;
+end;
+
+function InitializeSetup: boolean;
+begin
+  Result := not IsAppRunning('MenuBarSchedule.exe');
+  if not Result then
+  MsgBox('Menu Bar Schedule is running. Please close the application before running the installer ', mbError, MB_OK);
+end;
