@@ -16,8 +16,11 @@ class MenuBarSchedule(pystray.Icon):
             name="Menu Bar Schedule",
             title=""
         )
-        self.is_running = True
+
         self.font_path = font_path
+        self.font = ImageFont.truetype(self.font_path, size=24)
+
+        self.is_running = True
         self.icon = self.create_image("MBS")
         self.common = common
 
@@ -58,12 +61,11 @@ class MenuBarSchedule(pystray.Icon):
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
 
     def create_image(self, text):
-        font = ImageFont.truetype(self.font_path, size=24)
         image = Image.new('RGBA', (64, 64), (198, 169, 73))
         mask = Image.new("L", image.size, 0)
 
         dc = ImageDraw.Draw(image)
-        dc.text((5, 5), text, fill=(0, 0, 0, 255), font=font)
+        dc.text((5, 5), text, fill=(0, 0, 0, 255), font=self.font)
 
         draw = ImageDraw.Draw(mask)
         draw.rounded_rectangle([(0, 0), image.size], radius=15, fill=255)
