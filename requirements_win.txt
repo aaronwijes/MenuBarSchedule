@@ -1,5 +1,5 @@
 pyinstaller==6.22.3
-platformdirs==4.13.0
+platformdirs==4.14.0
 requests==2.34.2
 pystray==0.19.5
 supabase==2.33.0
