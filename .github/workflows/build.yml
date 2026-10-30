@@ -62,13 +62,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: iscc.exe resources/setup.iss
 
-      # - name: Compile .ISS to .EXE Installer
-      #   if: matrix.os == 'windows-latest'
-      #   uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-      #   with:
-      #     path: resources/setup.iss
-      #     options: /O+
-
       - name: Upload app package (macOS)
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v7
