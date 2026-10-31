@@ -24,8 +24,9 @@ class MenuBarSchedule(rumps.App):
             "hide_seconds": rumps.MenuItem(title="Hide Seconds Unit (>1 min)", callback=self.toggle_settings),
             "show_almost_end_notifs": rumps.MenuItem(title="Show Notifications Before Period Ends", callback=self.toggle_settings),
             "set_schedule_based_on_calendar": rumps.MenuItem(title="Set Schedule Based on Calendar", callback=self.toggle_settings),
-            "open_at_login": rumps.MenuItem(title="Open at Login", callback=self.toggle_settings),
             "NO_CONFIG_1": rumps.separator,
+            "open_at_login": rumps.MenuItem(title="Open at Login", callback=self.toggle_settings),
+            "NO_CONFIG_2": rumps.separator,
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
             "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings)
         }
