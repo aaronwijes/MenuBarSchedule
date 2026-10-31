@@ -195,18 +195,24 @@ class Updater():
                 if show_alerts:
                     show_info(
                         title="You're Up to Date",
-                        message=f"You're on the latest available schedule version."
+                        message=f"You have the latest schedules."
                     )
                 return False
 
             try:
-                self.database.download_online_schedules_from_sb()
-                if show_alerts:
+                success = self.database.download_online_schedules_from_sb()
+                if show_alerts and success:
                     show_info(
                         title="Update Successful",
                         message="Successfully updated schedules."
                     )
-                return True
+                    return True
+                elif show_alerts and not success:
+                    show_error(
+                        title="Update Failed",
+                        message="Failed to update schedules.\nThis version of Menu Bar Schedule cannot process the downloaded schedules.\nYou must update Menu Bar Schedule to continue receiving schedule updates."
+                    )
+                    return False
             except:
                 show_error(
                     title="Update Failed",

@@ -3,8 +3,8 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from platformdirs import user_config_dir
-from .info import REPO_NAME, GITHUB_USERNAME
 from supabase import create_client, Client
+from .info import REPO_NAME, GITHUB_USERNAME
 
 class Database():
     def __init__(self):
@@ -229,8 +229,8 @@ class Database():
     def add_online_schedule_em(self, rows):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
-            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order)
-            VALUES (:pack_id, :schedule_id, :schedule_name, :period_id, :period_name, :start_time, :end_time, :insertion_order)
+            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order, schedule_format_version)
+            VALUES (:pack_id, :schedule_id, :schedule_name, :period_id, :period_name, :start_time, :end_time, :insertion_order, :schedule_format_version)
             ON CONFLICT DO UPDATE SET
                 pack_id = excluded.pack_id,
                 schedule_id = excluded.schedule_id,
@@ -239,36 +239,8 @@ class Database():
                 period_name = excluded.period_name,
                 start_time = excluded.start_time,
                 end_time = excluded.end_time,
-                insertion_order = excluded.insertion_order;
-        """, rows)
-        self.conn.commit()
-
-    def add_online_calendar_em(self, rows):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date)
-            VALUES (:calendar_id, :calendar_name, :pack_id, :schedule_name, :schedule_id, :is_default, :exception_date)
-            ON CONFLICT DO UPDATE SET
-                calendar_id = excluded.calendar_id,
-                calendar_name = excluded.calendar_name,
-                pack_id = excluded.pack_id,
-                schedule_name = excluded.schedule_name,
-                schedule_id = excluded.schedule_id,
-                is_default = excluded.is_default,
-                exception_date = excluded.exception_date;
-        """, rows)
-        self.conn.commit()
-
-    def add_online_calendar_off_date_em(self, rows):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day)
-            VALUES (:calendar_id, :calendar_name, :pack_id, :off_day)
-            ON CONFLICT DO UPDATE SET
-                calendar_id = excluded.calendar_id,
-                calendar_name = excluded.calendar_name,
-                pack_id = excluded.pack_id,
-                off_day = excluded.off_day;
+                insertion_order = excluded.insertion_order,
+                schedule_format_version = excluded.schedule_format_version;
         """, rows)
         self.conn.commit()
 
@@ -280,7 +252,39 @@ class Database():
             ON CONFLICT DO UPDATE SET
                 pack_id = excluded.pack_id,
                 pack_name = excluded.pack_name,
-                pack_version = excluded.pack_version;
+                pack_version = excluded.pack_version,
+                schedule_format_version = excluded.schedule_format_version;
+        """, rows)
+        self.conn.commit()
+
+    def add_online_calendar_em(self, rows):
+        cursor = self.conn.cursor()
+        cursor.executemany(f"""
+            INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date, calendar_format_version)
+            VALUES (:calendar_id, :calendar_name, :pack_id, :schedule_name, :schedule_id, :is_default, :exception_date, :calendar_format_version)
+            ON CONFLICT DO UPDATE SET
+                calendar_id = excluded.calendar_id,
+                calendar_name = excluded.calendar_name,
+                pack_id = excluded.pack_id,
+                schedule_name = excluded.schedule_name,
+                schedule_id = excluded.schedule_id,
+                is_default = excluded.is_default,
+                exception_date = excluded.exception_date,
+                calendar_format_version = excluded.calendar_format_version;
+        """, rows)
+        self.conn.commit()
+
+    def add_online_calendar_off_date_em(self, rows):
+        cursor = self.conn.cursor()
+        cursor.executemany(f"""
+            INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day, calendar_format_version)
+            VALUES (:calendar_id, :calendar_name, :pack_id, :off_day, :calendar_format_version)
+            ON CONFLICT DO UPDATE SET
+                calendar_id = excluded.calendar_id,
+                calendar_name = excluded.calendar_name,
+                pack_id = excluded.pack_id,
+                off_day = excluded.off_day,
+                calendar_format_version = excluded.calendar_format_version;
         """, rows)
         self.conn.commit()
 
@@ -459,10 +463,14 @@ class Database():
 
         self.remove_all_online_schedule_packs()
         self.remove_all_online_calendars()
-        self.add_online_schedule_em(schedules.data)
-        self.add_online_schedule_pack_em(schedule_packs.data)
-        self.add_online_calendar_em(schedule_calendars.data)
-        self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
+        if schedules.data[0]["schedule_format_version"] == 1 and schedule_calendars.data[0]["calendar_format_version"] == 1:
+            self.add_online_schedule_em(schedules.data)
+            self.add_online_schedule_pack_em(schedule_packs.data)
+            self.add_online_calendar_em(schedule_calendars.data)
+            self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
+            return True
+        else:
+            return False
 
     # def convert_schedule_jsons_to_sql(self):
     #     schedule_path = Path(self.database_dir) / "schedules"

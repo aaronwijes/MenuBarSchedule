@@ -17,14 +17,14 @@ MBS_LAUNCHD_PLIST = """
 
         <key>ProgramArguments</key>
         <array>
-            <string>/Applications/MenuBarSchedule.app</string>
+            <string>/Applications/MenuBarSchedule.app/Contents/macOS/MenuBarSchedule</string>
         </array>
 
         <key>RunAtLoad</key>
         <true/>
         
         <key>KeepAlive</key>
-        <true/>
+        <false/>
         
         <key>StandardOutPath</key>
         <string>/tmp/menubarschedule.log</string>
@@ -80,10 +80,9 @@ class MBSCommonFunctions():
                 
             selected_pack_id = ""
             if self.settings["selected_online_pack"] not in self.pack_options.values():
-                self.settings["selected_online_pack"] = ""
-                self.settings["selected_online_pack_id"] = ""
-                self.database.set_value("selected_online_pack", "")
-                self.database.set_value("selected_online_pack_id", "")
+                for key in ["selected_online_pack", "selected_online_pack_id"]:
+                    self.settings[key] = ""
+                    self.database.set_value(key, "")
                 self.calendar = None
             if self.settings["selected_online_pack"] != "":
                 selected_pack_id = self.settings["selected_online_pack_id"]
@@ -94,10 +93,9 @@ class MBSCommonFunctions():
                     self.calendar = None
             return self.pack_options, selected_pack_id
         else:
-            self.settings["selected_online_pack"] = ""
-            self.settings["selected_online_pack_id"] = ""
-            self.database.set_value("selected_online_pack", "")
-            self.database.set_value("selected_online_pack_id", "")
+            for key in ["selected_online_pack", "selected_online_pack_id"]:
+                self.settings[key] = ""
+                self.database.set_value(key, "")
             return {}, ""
 
     def load_schedules(self):
@@ -343,17 +341,16 @@ class MBSCommonFunctions():
     def toggle_login_item(self):
         if system() == "Darwin":
             uid = os.getuid()
-            paths = {
-                "autopatcher_plist": os.path.expanduser("~/Library/LaunchAgents/org.aaron.menubarschedule.plist")
-            }
+            plist_path = os.path.expanduser("~/Library/LaunchAgents/org.aaron.menubarschedule.plist")
+            
             if self.settings["open_at_login"]:
-                Path(paths["autopatcher_plist"]).write_text(MBS_LAUNCHD_PLIST)
-                subprocess.run(["chmod", "644", paths["autopatcher_plist"]])
-                subprocess.run(["launchctl", "bootout", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                Path(plist_path).write_text(MBS_LAUNCHD_PLIST)
+                subprocess.run(["chmod", "644", plist_path])
+                subprocess.run(["launchctl", "bootout", f"gui/{uid}", plist_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", plist_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
-                subprocess.run(["launchctl", "bootout", f"gui/{uid}", paths["autopatcher_plist"]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                if Path(paths["autopatcher_plist"]).exists():
-                    os.remove(paths["autopatcher_plist"])
+                subprocess.run(["launchctl", "bootout", f"gui/{uid}", plist_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if Path(plist_path).exists():
+                    os.remove(plist_path)
         elif system() == "Windows":
-            return
+            return # To enable open on startup for Windows, use the installer
