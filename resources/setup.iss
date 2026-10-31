@@ -8,7 +8,10 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
+
 SetupIconFile=AppIcon.ico
+SmallWizardImageFile=SetupImages\SmallWizardImageFile.png
+WizardImageFile=SetupImages\WizardImageFile.png
 
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
