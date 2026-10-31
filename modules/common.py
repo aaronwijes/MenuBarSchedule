@@ -61,48 +61,44 @@ class MBSCommonFunctions():
         for key in self.settings_keys:
             self.settings[key] = self.database.fetch_value(key)
 
-    def schedule_dir_exists(self, force_load_json=True):
-        schedule_path = Path(self.database.database_dir) / "schedules"
-
-        if self.database.get_all_online_schedule_packs() == {} and not schedule_path.exists():
+    def schedule_dir_exists(self):
+        if self.database.get_all_online_schedule_packs() == {}:
             if not self.update_schedules(False):
                 for key in ["selected_schedule", "selected_schedule_id", "selected_online_pack", "selected_online_pack_id"]:
                     self.settings[key] = ""
                     self.database.set_value(key, "")
                 return False
 
-        if self.database.get_all_online_schedule_packs() != {}:
-            return True
+            return self.database.get_all_online_schedule_packs() != {}
         else:
-            return False
+            return True
 
     def load_packs(self):
         self.packs = self.database.get_all_online_schedule_packs()
         if self.packs != {}:
             self.pack_options = {id: pack_obj["pack_name"] for id, pack_obj in self.packs.items()}
                 
-            if self.pack_options != {}:
-                selected_pack_id = ""
-                if self.settings["selected_online_pack"] not in self.pack_options.values():
-                    self.settings["selected_online_pack"] = ""
-                    self.settings["selected_online_pack_id"] = ""
-                    self.database.set_value("selected_online_pack", "")
-                    self.database.set_value("selected_online_pack_id", "")
-                    self.calendar = None
-                if self.settings["selected_online_pack"] != "":
-                    selected_pack_id = self.settings["selected_online_pack_id"]
-                    calendar = self.database.get_calendar(selected_pack_id)
-                    if calendar != {}:
-                        self.calendar = calendar
-                    else:
-                        self.calendar = None
-                return self.pack_options, selected_pack_id
-            else:
+            selected_pack_id = ""
+            if self.settings["selected_online_pack"] not in self.pack_options.values():
                 self.settings["selected_online_pack"] = ""
                 self.settings["selected_online_pack_id"] = ""
                 self.database.set_value("selected_online_pack", "")
                 self.database.set_value("selected_online_pack_id", "")
-                return {}, ""
+                self.calendar = None
+            if self.settings["selected_online_pack"] != "":
+                selected_pack_id = self.settings["selected_online_pack_id"]
+                calendar = self.database.get_calendar(selected_pack_id)
+                if calendar != {}:
+                    self.calendar = calendar
+                else:
+                    self.calendar = None
+            return self.pack_options, selected_pack_id
+        else:
+            self.settings["selected_online_pack"] = ""
+            self.settings["selected_online_pack_id"] = ""
+            self.database.set_value("selected_online_pack", "")
+            self.database.set_value("selected_online_pack_id", "")
+            return {}, ""
 
     def load_schedules(self):
         self.schedule_options = self.database.get_all_online_schedules()
@@ -148,15 +144,13 @@ class MBSCommonFunctions():
         return title
 
     def get_daily_schedule(self, calendar, schedule_options, now):
-        if f"{now.month}/{now.day}/{now.year}" in calendar["exceptions"].keys():
-            if calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["id"] in schedule_options.keys():
-                schedule_name = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["name"]
-                schedule_id = calendar["exceptions"][f"{now.month}/{now.day}/{now.year}"]["id"]
-        elif calendar["default"]["id"] in schedule_options.keys():
-            schedule_name = calendar["default"]["name"]
-            schedule_id = calendar["default"]["id"]
+        date = f"{now.month}/{now.day}/{now.year}"
+        schedule = calendar["exceptions"].get(date, calendar["default"])
 
-        return schedule_id, schedule_name
+        if schedule["id"] in schedule_options:
+            return schedule["id"], schedule["name"]
+
+        return "", ""
 
     def select_schedule(self, title):
         old_schedule_id = ""
@@ -180,12 +174,6 @@ class MBSCommonFunctions():
             for key in ["selected_schedule", "selected_schedule_id", "selected_online_pack", "selected_online_pack_id"]:
                 self.settings[key] = ""
                 self.database.set_value(key, "")
-        elif selected_online_pack != "":
-            old_pack_id = self.database.get_online_pack_id(selected_online_pack)
-            pack_id = self.database.get_online_pack_id(title)
-            for key, value in {"selected_online_pack": title, "selected_online_pack_id": pack_id}.items():
-                self.settings[key] = value
-                self.database.set_value(key, value)
         else:
             old_pack_id = self.database.get_online_pack_id(selected_online_pack)
             pack_id = self.database.get_online_pack_id(title)
@@ -322,9 +310,10 @@ class MBSCommonFunctions():
 
     def view_schedule(self):
         if self.settings["selected_schedule"] != "":
-            message = ""
-            for period in self.current_schedule["schedule"].values():
-                message += f"{period["name"]}: {period["start"]} - {period["end"]}\n"
+            message = "\n".join(
+                f"{period["name"]}: {period["start"]} - {period["end"]}"
+                for period in self.current_schedule["schedule"].values()
+            )
             title = self.current_schedule["name"]
         else:
             title = "No Schedule Selected"

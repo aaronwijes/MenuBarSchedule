@@ -28,9 +28,9 @@ class MenuBarSchedule(rumps.App):
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
             "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings)
         }
-        for id, item in self.settings_items.items():
-            if id in self.common.settings:
-                item.state = self.common.settings[id]
+        for key, item in self.settings_items.items():
+            if key in self.common.settings:
+                item.state = self.common.settings[key]
             self.settings.add(item)
 
         self.menu = [
@@ -46,12 +46,12 @@ class MenuBarSchedule(rumps.App):
             rumps.separator,
         ]
 
+        if self.common.check_updates_on_startup() == "quit":
+            rumps.quit_application()
+
         self.refresh_schedules(self.change_schedule)
         self.timer = rumps.Timer(self.update_time_left, interval=1.0)
         self.timer.start()
-
-        if self.common.check_updates_on_startup() == "quit":
-            rumps.quit_application()
 
     def select_option_schedule(self, sender):
         old_schedule_id = self.common.select_schedule(sender.title)
@@ -109,7 +109,7 @@ class MenuBarSchedule(rumps.App):
             return
 
         self.pack_options, selected_pack_id = self.common.load_packs()
-        if self.pack_options != {}:
+        if self.pack_options:
             self.pack_items = {
                 id: rumps.MenuItem(title=name, callback=self.select_option_pack)
                 for id, name in self.pack_options.items()
@@ -126,7 +126,7 @@ class MenuBarSchedule(rumps.App):
             self.change_schedule_pack.add(rumps.MenuItem(title="No Packs Found"))
 
         self.schedule_options, selected_schedule_id, set_schedule_based_on_calendar = self.common.load_schedules()
-        if self.schedule_options != {}:
+        if self.schedule_options:
             self.schedule_items = {
                 id: rumps.MenuItem(title=name, callback=self.select_option_schedule if not set_schedule_based_on_calendar else None)
                 for id, name in self.schedule_options.items()
@@ -173,5 +173,7 @@ if __name__ == "__main__":
     database = Database()
     updater = Updater(database)
     common = MBSCommonFunctions(database, updater)
-    MenuBarSchedule(database, common).run()
-    database.conn.close()
+    try:
+        MenuBarSchedule(database, common).run()
+    finally:
+        database.conn.close()

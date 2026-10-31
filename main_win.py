@@ -1,7 +1,6 @@
 import sys
 import ctypes
 import pystray
-import platform
 import threading
 from pathlib import Path
 from modules.database import Database
@@ -50,11 +49,11 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="Quit", action=self.stop)
         )
 
-        self.refresh_schedules(force_load_json=True)
+        self.refresh_schedules()
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
-
-        self.timer = threading.Timer(1.0, self.update_time_left)
+        
+        self.timer = threading.Thread(target=self.update_time_loop, daemon=True)
         self.timer.start()
 
     def show_info(self, title, message):
@@ -85,15 +84,20 @@ class MenuBarSchedule(pystray.Icon):
 
     def select_option_pack(self, icon, item):
         self.common.select_pack(item.text)
-        self.refresh_schedules(force_load_json=False)
+        self.refresh_schedules()
 
     def toggle_settings(self, icon, item):
         self.common.toggle_settings(item.text)
 
         if item.text == "Set Schedule Based on Calendar":
-            self.refresh_schedules(force_load_json=False)
+            self.refresh_schedules()
 
-    def update_time_left(self, continue_thread=True):
+    def update_time_loop(self):
+        while self.is_running:
+            self.update_time_left()
+            threading.Event().wait(1.0)
+
+    def update_time_left(self):
         if not self.is_running:
             return
 
@@ -125,12 +129,8 @@ class MenuBarSchedule(pystray.Icon):
         if use_calendar and old_schedule_id != schedule_id:
             self.update_menu()
 
-        if self.is_running and continue_thread and platform.system() == "Windows":
-            self.timer = threading.Timer(1.0, self.update_time_left)
-            self.timer.start()
-
-    def refresh_schedules(self, force_load_json=True):
-        if not self.common.schedule_dir_exists(force_load_json=force_load_json):
+    def refresh_schedules(self):
+        if not self.common.schedule_dir_exists():
             self.pack_items = {"NONE": Item(text="No Packs Found", action=None, enabled=False)}
             self.schedule_items = {"NONE": Item(text="No Schedules Found", action=None, enabled=False)}
             return
@@ -152,7 +152,7 @@ class MenuBarSchedule(pystray.Icon):
             }
 
             if selected_schedule_id != "":
-                self.update_time_left(continue_thread=False)
+                self.update_time_left()
         else:
             self.schedule_items = {"NONE": Item(text="No Schedules Found", action=None, enabled=False)}
 
@@ -165,7 +165,7 @@ class MenuBarSchedule(pystray.Icon):
 
     def update_schedules_thread(self):
         if self.common.update_schedules(True):
-            self.refresh_schedules(force_load_json=True)
+            self.refresh_schedules()
 
     def check_updates(self, sender):
         threading.Thread(target=self.common.update_app, args=(True,), daemon=True).start()
@@ -190,6 +190,8 @@ if __name__ == "__main__":
     updater = Updater(database)
     common = MBSCommonFunctions(database, updater)
     app = MenuBarSchedule(common, font_path)
-    app.run()
-    app.is_running = False
-    database.conn.close()
+    try:
+        app.run()
+    finally:
+        app.is_running = False
+        database.conn.close()
