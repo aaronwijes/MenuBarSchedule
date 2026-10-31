@@ -393,6 +393,11 @@ class Database():
             .select("*")
             .execute()
         )
+        schedule_calendars_off_days = (
+            self.supabase.table("online_calendars_off_days")
+            .select("*")
+            .execute()
+        )
 
         self.remove_all_online_schedule_packs()
         self.remove_all_online_calendars()
@@ -402,6 +407,8 @@ class Database():
             self.add_online_schedule_pack(row["pack_id"], row["pack_name"], row["pack_version"])
         for row in schedule_calendars.data:
             self.add_online_calendar(row["calendar_id"], row["calendar_name"], row["pack_id"], row["schedule_name"], row["schedule_id"], row["is_default"], row["exception_date"])
+        for row in schedule_calendars_off_days.data:
+            self.add_online_calendar_off_date(row["calendar_id"], row["calendar_name"], row["pack_id"], row["off_day"])
 
     # def convert_schedule_jsons_to_sql(self):
     #     schedule_path = Path(self.database_dir) / "schedules"
