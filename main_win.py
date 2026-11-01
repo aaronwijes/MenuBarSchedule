@@ -16,12 +16,13 @@ class MenuBarSchedule(pystray.Icon):
             title=""
         )
 
+        self.common = common
         self.font_path = font_path
         self.font = ImageFont.truetype(self.font_path, size=24)
+        self.icon = self.create_image("MBS")
 
         self.is_running = True
-        self.icon = self.create_image("MBS")
-        self.common = common
+        self.stop_event = threading.Event()
 
         self.pack_items = {"NONE": Item("Loading...", action=None)}
         self.schedule_items = {"NONE": Item("Loading...", action=None)}
@@ -58,8 +59,7 @@ class MenuBarSchedule(pystray.Icon):
         self.timer.start()
 
         self.auto_update_timer = threading.Thread(target=self.auto_update_loop, daemon=True)
-        if self.common.settings["auto_update_schedules"]:
-            self.auto_update_timer.start()
+        self.auto_update_timer.start()
 
     def show_info(self, title, message):
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
@@ -100,13 +100,18 @@ class MenuBarSchedule(pystray.Icon):
     def update_time_loop(self):
         while self.is_running:
             self.update_time_left()
-            threading.Event().wait(1.0)
+
+            if self.stop_event.wait(1):
+                return
 
     def auto_update_loop(self):
-        while self.common.settings["auto_update_schedules"]:
-            if self.common.update_schedules(False, True) == True:
-                self.refresh_schedules()
-            threading.Event().wait(60.0 * 30)
+        while self.is_running:
+            if self.common.settings["auto_update_schedules"]:
+                if self.common.update_schedules(False, True) == True:
+                    self.refresh_schedules()
+        
+            if self.stop_event.wait(1800):
+                return
 
     def update_time_left(self):
         if not self.is_running:
@@ -207,4 +212,5 @@ if __name__ == "__main__":
         app.run()
     finally:
         app.is_running = False
+        app.stop_event.set()
         database.conn.close()
