@@ -95,7 +95,7 @@ class MenuBarSchedule(pystray.Icon):
         self.common.toggle_settings(item.text)
 
         if item.text == "Set Schedule Based on Calendar":
-            self.refresh_schedules()
+            threading.Thread(target=self.refresh_schedules, daemon=True).start()
 
     def update_time_loop(self):
         while self.is_running:
