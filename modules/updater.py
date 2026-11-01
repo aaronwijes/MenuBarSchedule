@@ -134,7 +134,7 @@ class Updater():
         except requests.exceptions.ConnectionError:
             show_error(
                 title="Connection Error",
-                message="An unexpected error occured!"
+                message="Couldn't connect to GitHub Releases."
             )
 
     def update_schedules(self, show_success_alerts, headless):
@@ -227,7 +227,7 @@ class Updater():
             if not headless:
                 show_error(
                     title="Connection Error",
-                    message="An unexpected error occured!"
+                    message="Couldn't connect to Supabase."
                 )
             return False
         except ValueError:

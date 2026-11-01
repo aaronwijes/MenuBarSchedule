@@ -52,7 +52,7 @@ class MenuBarSchedule(rumps.App):
         if self.common.check_updates_on_startup() == "quit":
             rumps.quit_application()
 
-        self.auto_update_timer = rumps.Timer(self.auto_update_schedules, interval=30*60)
+        self.auto_update_timer = rumps.Timer(self.auto_update_schedules, interval=1800.0)
         self.toggle_auto_update_schedules_timer()
 
         self.refresh_schedules(self.change_schedule)
