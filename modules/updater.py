@@ -76,7 +76,7 @@ class Updater():
     def __init__(self, database: Database):
         self.database = database
 
-    def update_app_macos(self, show_alerts):
+    def update_app_macos(self, show_success_alerts):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -84,7 +84,7 @@ class Updater():
                 return
 
             if not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
-                if show_alerts:
+                if show_success_alerts:
                     show_info(
                         title="You're Up to Date",
                         message=f"You're on the latest available version ({VERSION})."
@@ -137,7 +137,7 @@ class Updater():
                 message="An unexpected error occured!"
             )
 
-    def update_schedules(self, show_alerts, headless):
+    def update_schedules(self, show_success_alerts, headless):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -193,7 +193,7 @@ class Updater():
                 if not continue_update:
                     return False
             elif not is_schedule_update:
-                if show_alerts and not headless:
+                if show_success_alerts and not headless:
                     show_info(
                         title="You're Up to Date",
                         message=f"You have the latest schedules."
@@ -203,7 +203,7 @@ class Updater():
             try:
                 success = self.database.download_online_schedules_from_sb()
                 if success:
-                    if show_alerts:
+                    if show_success_alerts:
                         show_info(
                             title="Update Successful",
                             message="Successfully updated schedules."

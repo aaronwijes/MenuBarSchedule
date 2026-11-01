@@ -334,11 +334,11 @@ class MBSCommonFunctions():
         if self.settings["check_schedule_updates_on_startup"]:
             self.update_schedules(False, False)
 
-    def update_app(self, show_alerts):
-        return self.updater.update_app_macos(show_alerts)
+    def update_app(self, show_success_alerts):
+        return self.updater.update_app_macos(show_success_alerts)
 
-    def update_schedules(self, show_alerts, headless):
-        return self.updater.update_schedules(show_alerts, headless)
+    def update_schedules(self, show_success_alerts, headless):
+        return self.updater.update_schedules(show_success_alerts, headless)
 
     def toggle_login_item(self):
         if system() == "Darwin":
