@@ -167,6 +167,8 @@ class MenuBarSchedule(pystray.Icon):
         else:
             self.schedule_items = {"NONE": Item(text="No Schedules Found", action=None, enabled=False)}
 
+        self.update_menu()
+
     def view_schedule(self, sender):
         title, message = self.common.view_schedule()
         self.show_info(
