@@ -31,6 +31,7 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="Show Notifications Before Period Ends", action=self.toggle_settings, checked=lambda item: self.common.settings["show_almost_end_notifs"]),
             Item(text="Set Schedule Based on Calendar", action=self.toggle_settings, checked=lambda item: self.common.settings["set_schedule_based_on_calendar"]),
             pystray.Menu.SEPARATOR,
+            Item(text="Auto-Update Schedules", action=self.toggle_settings, checked=lambda item: self.common.settings["auto_update_schedules"]),
             Item(text="Check for App Updates on Startup", action=self.toggle_settings, checked=lambda item: self.common.settings["check_app_updates_on_startup"]),
             Item(text="Check for Schedule Updates on Startup", action=self.toggle_settings, checked=lambda item: self.common.settings["check_schedule_updates_on_startup"]),
         )
@@ -55,6 +56,10 @@ class MenuBarSchedule(pystray.Icon):
         
         self.timer = threading.Thread(target=self.update_time_loop, daemon=True)
         self.timer.start()
+
+        self.auto_update_timer = threading.Thread(target=self.auto_update_loop, daemon=True)
+        if self.common.settings["auto_update_schedules"]:
+            self.auto_update_timer.start()
 
     def show_info(self, title, message):
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
@@ -96,6 +101,12 @@ class MenuBarSchedule(pystray.Icon):
         while self.is_running:
             self.update_time_left()
             threading.Event().wait(1.0)
+
+    def auto_update_loop(self):
+        while self.common.settings["auto_update_schedules"]:
+            if self.common.update_schedules(False, True) == True:
+                self.refresh_schedules()
+            threading.Event().wait(60.0 * 30)
 
     def update_time_left(self):
         if not self.is_running:
@@ -164,7 +175,7 @@ class MenuBarSchedule(pystray.Icon):
         )
 
     def update_schedules_thread(self):
-        if self.common.update_schedules(True):
+        if self.common.update_schedules(True, False):
             self.refresh_schedules()
 
     def check_updates(self, sender):

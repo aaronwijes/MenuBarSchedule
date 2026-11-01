@@ -52,6 +52,7 @@ class MBSCommonFunctions():
             "set_schedule_based_on_calendar",
             "check_app_updates_on_startup",
             "check_schedule_updates_on_startup",
+            "auto_update_schedules",
             "selected_online_pack",
             "selected_online_pack_id",
             "selected_schedule",
@@ -63,7 +64,7 @@ class MBSCommonFunctions():
 
     def schedule_dir_exists(self):
         if self.database.get_all_online_schedule_packs() == {}:
-            if not self.update_schedules(False):
+            if not self.update_schedules(False, False):
                 for key in ["selected_schedule", "selected_schedule_id", "selected_online_pack", "selected_online_pack_id"]:
                     self.settings[key] = ""
                     self.database.set_value(key, "")
@@ -185,6 +186,7 @@ class MBSCommonFunctions():
         cfg_lookup = {
             "Check for App Updates on Startup": "check_app_updates_on_startup",
             "Check for Schedule Updates on Startup": "check_schedule_updates_on_startup",
+            "Auto-Update Schedules": "auto_update_schedules",
             "Shorten Title": "use_shorthand",
             "Hide Seconds Unit (>1 min)": "hide_seconds",
             "Show Notifications Before Period Ends": "show_almost_end_notifs",
@@ -330,13 +332,13 @@ class MBSCommonFunctions():
             if self.update_app(False) == "restart":
                 return "quit"
         if self.settings["check_schedule_updates_on_startup"]:
-            self.update_schedules(False)
+            self.update_schedules(False, False)
 
     def update_app(self, show_alerts):
         return self.updater.update_app_macos(show_alerts)
 
-    def update_schedules(self, show_alerts):
-        return self.updater.update_schedules(show_alerts)
+    def update_schedules(self, show_alerts, headless):
+        return self.updater.update_schedules(show_alerts, headless)
 
     def toggle_login_item(self):
         if system() == "Darwin":

@@ -27,8 +27,9 @@ class MenuBarSchedule(rumps.App):
             "NO_CONFIG_1": rumps.separator,
             "open_at_login": rumps.MenuItem(title="Open at Login", callback=self.toggle_settings),
             "NO_CONFIG_2": rumps.separator,
+            "auto_update_schedules": rumps.MenuItem(title="Auto-Update Schedules", callback=self.toggle_settings),
             "check_app_updates_on_startup": rumps.MenuItem(title="Check for App Updates on Startup", callback=self.toggle_settings),
-            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings)
+            "check_schedule_updates_on_startup": rumps.MenuItem(title="Check for Schedule Updates on Startup", callback=self.toggle_settings),
         }
         for key, item in self.settings_items.items():
             if key in self.common.settings:
@@ -50,6 +51,9 @@ class MenuBarSchedule(rumps.App):
 
         if self.common.check_updates_on_startup() == "quit":
             rumps.quit_application()
+
+        self.auto_update_timer = rumps.Timer(self.auto_update_schedules, interval=30*60)
+        self.toggle_auto_update_schedules_timer()
 
         self.refresh_schedules(self.change_schedule)
         self.timer = rumps.Timer(self.update_time_left, interval=1.0)
@@ -75,6 +79,8 @@ class MenuBarSchedule(rumps.App):
             self.refresh_schedules(None)
         elif sender.title == "Open at Login":
             self.common.toggle_login_item()
+        elif sender.title == "Auto-Update Schedules":
+            self.toggle_auto_update_schedules_timer()
 
     def update_time_left(self, sender):
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
@@ -145,6 +151,16 @@ class MenuBarSchedule(rumps.App):
             self.change_schedule.clear()
             self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
 
+    def toggle_auto_update_schedules_timer(self):
+        if self.common.settings["auto_update_schedules"]:
+            self.auto_update_timer.start()
+        else:
+            self.auto_update_timer.stop()
+
+    def auto_update_schedules(self, sender):
+        if self.common.update_schedules(False, True):
+            self.refresh_schedules(None)
+
     @rumps.clicked("View Current Schedule")
     def view_schedule(self, sender):
         title, message = self.common.view_schedule()
@@ -160,7 +176,7 @@ class MenuBarSchedule(rumps.App):
 
     @rumps.clicked("Check for Schedule Updates")
     def update_schedules(self, sender):
-        if self.common.update_schedules(True):
+        if self.common.update_schedules(True, False):
             self.refresh_schedules(None)
 
     @rumps.clicked("About")

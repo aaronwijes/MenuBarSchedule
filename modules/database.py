@@ -23,6 +23,7 @@ class Database():
             "show_almost_end_notifs": 0,
             "check_app_updates_on_startup": 0,
             "check_schedule_updates_on_startup": 0,
+            "auto_update_schedules": 0,
             "set_schedule_based_on_calendar": 0,
             "open_at_login": 0,
             "selected_schedule": "",

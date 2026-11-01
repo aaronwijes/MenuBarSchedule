@@ -137,7 +137,7 @@ class Updater():
                 message="An unexpected error occured!"
             )
 
-    def update_schedules(self, show_alerts):
+    def update_schedules(self, show_alerts, headless):
         try:
             session = requests.Session()
             releases = get_releases(session)
@@ -158,7 +158,7 @@ class Updater():
                     if saved_metadata_json.get(metadata_obj["pack_id"], {"pack_version": 0})["pack_version"] < metadata_obj["pack_version"]:
                         is_schedule_update = True
 
-            if force_install and is_app_version_same:
+            if force_install and is_app_version_same and not headless:
                 download_schedules = askokcancel(
                     title="Schedules Not Found",
                     message="Schedules are required for Menu Bar Schedule to function.\nInstall schedules?",
@@ -167,7 +167,7 @@ class Updater():
                 )
                 if not download_schedules:
                     return False
-            elif is_schedule_update and is_app_version_same:
+            elif is_schedule_update and is_app_version_same and not headless:
                 update = askokcancel(
                     title="Schedule Updates Available",
                     message=f"A schedule update is available.\nInstall the update?",
@@ -177,12 +177,13 @@ class Updater():
                 if not update:
                     return False
             elif is_schedule_update and not is_app_version_same and is_later_app_version:
-                show_error(
-                    title="Cannot Update Schedules",
-                    message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
-                )
+                if not headless:
+                    show_error(
+                        title="Cannot Update Schedules",
+                        message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
+                    )
                 return False
-            elif is_schedule_update and not is_app_version_same and not is_later_app_version:
+            elif is_schedule_update and not is_app_version_same and not is_later_app_version and not headless:
                 continue_update = askokcancel(
                     title="Schedule Updates Available",
                     message=f"A schedule update is available, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
@@ -191,8 +192,8 @@ class Updater():
                 )
                 if not continue_update:
                     return False
-            else:
-                if show_alerts:
+            elif not is_schedule_update:
+                if show_alerts and not headless:
                     show_info(
                         title="You're Up to Date",
                         message=f"You have the latest schedules."
@@ -201,33 +202,38 @@ class Updater():
 
             try:
                 success = self.database.download_online_schedules_from_sb()
-                if show_alerts and success:
-                    show_info(
-                        title="Update Successful",
-                        message="Successfully updated schedules."
-                    )
+                if success:
+                    if show_alerts:
+                        show_info(
+                            title="Update Successful",
+                            message="Successfully updated schedules."
+                        )
                     return True
-                elif show_alerts and not success:
-                    show_error(
-                        title="Update Failed",
-                        message="Failed to update schedules.\nThis version of Menu Bar Schedule cannot process the downloaded schedules.\nYou must update Menu Bar Schedule to continue receiving schedule updates."
-                    )
+                elif not success:
+                    if not headless:
+                        show_error(
+                            title="Update Failed",
+                            message="Failed to update schedules.\nThis version of Menu Bar Schedule cannot process the downloaded schedules.\nYou must update Menu Bar Schedule to continue receiving schedule updates."
+                        )
                     return False
             except:
-                show_error(
-                    title="Update Failed",
-                    message="Failed to update schedules."
-                )
+                if not headless:
+                    show_error(
+                        title="Update Failed",
+                        message="Failed to update schedules."
+                    )
                 return False
         except requests.exceptions.ConnectionError:
-            show_error(
-                title="Connection Error",
-                message="An unexpected error occured!"
-            )
+            if not headless:
+                show_error(
+                    title="Connection Error",
+                    message="An unexpected error occured!"
+                )
             return False
         except ValueError:
-            show_error(
-                title="Cannot Update Schedules",
-                message=f"The schedule metadata seems to be corrupt."
-            )
+            if not headless:
+                show_error(
+                    title="Cannot Update Schedules",
+                    message=f"The schedule metadata seems to be corrupt."
+                )
             return False
