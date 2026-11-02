@@ -44,21 +44,24 @@ class MBSCommonFunctions():
         self.last_notified_period = None
         self.current_schedule = {}
 
-        self.settings = {}
-        self.settings_keys = [
-            "use_shorthand",
-            "hide_seconds",
-            "show_almost_end_notifs",
-            "set_schedule_based_on_calendar",
-            "check_app_updates_on_startup",
-            "check_schedule_updates_on_startup",
-            "auto_update_schedules",
+        self.cfg_lookup = {
+            "Check for App Updates on Startup": "check_app_updates_on_startup",
+            "Check for Schedule Updates on Startup": "check_schedule_updates_on_startup",
+            "Auto-Update Schedules": "auto_update_schedules",
+            "Shorten Title": "use_shorthand",
+            "Hide Seconds Unit (>1 min)": "hide_seconds",
+            "Show Notifications Before Period Ends": "show_almost_end_notifs",
+            "Set Schedule Based on Calendar": "set_schedule_based_on_calendar",
+            "Open at Login": "open_at_login"
+        }
+        self.settings_keys = list(self.cfg_lookup.values()) + [
             "selected_online_pack",
             "selected_online_pack_id",
             "selected_schedule",
-            "selected_schedule_id",
-            "open_at_login"
+            "selected_schedule_id"
         ]
+
+        self.settings = {}
         for key in self.settings_keys:
             self.settings[key] = self.database.fetch_value(key)
 
@@ -184,18 +187,8 @@ class MBSCommonFunctions():
         return old_pack_id
 
     def toggle_settings(self, title):
-        cfg_lookup = {
-            "Check for App Updates on Startup": "check_app_updates_on_startup",
-            "Check for Schedule Updates on Startup": "check_schedule_updates_on_startup",
-            "Auto-Update Schedules": "auto_update_schedules",
-            "Shorten Title": "use_shorthand",
-            "Hide Seconds Unit (>1 min)": "hide_seconds",
-            "Show Notifications Before Period Ends": "show_almost_end_notifs",
-            "Set Schedule Based on Calendar": "set_schedule_based_on_calendar",
-            "Open at Login": "open_at_login"
-        }
-        if title in cfg_lookup:
-            config_key = cfg_lookup[title]
+        if title in self.cfg_lookup:
+            config_key = self.cfg_lookup[title]
             self.settings[config_key] = not self.settings[config_key]
             self.database.set_value(config_key, self.settings[config_key])
         
