@@ -462,16 +462,23 @@ class Database():
             .execute()
         )
 
-        self.remove_all_online_schedule_packs()
-        self.remove_all_online_calendars()
-        if schedules.data[0]["schedule_format_version"] == 1 and schedule_calendars.data[0]["calendar_format_version"] == 1:
-            self.add_online_schedule_em(schedules.data)
-            self.add_online_schedule_pack_em(schedule_packs.data)
-            self.add_online_calendar_em(schedule_calendars.data)
-            self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
-            return True
-        else:
-            return False
+        if len(schedules.data) > 0:
+            if schedules.data[0]["schedule_format_version"] == 1:
+                self.remove_all_online_schedule_packs()
+                self.add_online_schedule_em(schedules.data)
+                self.add_online_schedule_pack_em(schedule_packs.data)
+            else:
+                return False
+
+        if len(schedule_calendars.data) > 0:
+            if schedule_calendars.data[0]["calendar_format_version"] == 1:
+                self.remove_all_online_calendars()
+                self.add_online_calendar_em(schedule_calendars.data)
+                self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
+            else:
+                return False
+
+        return True
 
     # def convert_schedule_jsons_to_sql(self):
     #     schedule_path = Path(self.database_dir) / "schedules"
