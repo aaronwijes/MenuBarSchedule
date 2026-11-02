@@ -1,6 +1,5 @@
 import os
 import subprocess
-from tzlocal import get_localzone
 from datetime import datetime, timedelta
 from pathlib import Path
 from platform import system
@@ -44,7 +43,6 @@ class MBSCommonFunctions():
         self.calendar = None
         self.last_notified_period = None
         self.current_schedule = {}
-        self.timezone = get_localzone()
 
         self.settings = {}
         self.settings_keys = [
@@ -203,7 +201,7 @@ class MBSCommonFunctions():
         return self.settings[config_key]
 
     def update_time_left_calendar(self):
-        now = datetime.now(self.timezone)
+        now = datetime.now()
         tomorrow = now.date() + timedelta(days=1)
         day_is_off = False
         day_is_over = False
@@ -220,8 +218,7 @@ class MBSCommonFunctions():
                 month=now.month,
                 day=now.day,
                 hour=list(temp_schedule["schedule"].values())[-1]["parsed_end"].hour,
-                minute=list(temp_schedule["schedule"].values())[-1]["parsed_end"].minute,
-                tzinfo=self.timezone
+                minute=list(temp_schedule["schedule"].values())[-1]["parsed_end"].minute
             )
             if (now - last_period_end).total_seconds() > 0:
                 day_is_over = True
@@ -243,14 +240,13 @@ class MBSCommonFunctions():
                     self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
 
             if day_is_over and not day_is_off:
-                now = datetime.now(self.timezone)
+                now = datetime.now()
                 start = datetime(
                     year=tomorrow.year,
                     month=tomorrow.month,
                     day=tomorrow.day,
                     hour=list(self.current_schedule["schedule"].values())[0]["parsed_start"].hour,
-                    minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute,
-                    tzinfo=self.timezone
+                    minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute
                 )
                 time_until_start = round((start - now).total_seconds())
                 proposed_title = self.get_title("start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
@@ -261,7 +257,7 @@ class MBSCommonFunctions():
         return use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off
 
     def update_time_left(self, day_is_off):
-        now = datetime.now(self.timezone)
+        now = datetime.now()
         tomorrow = now.date() + timedelta(days=1)
 
         proposed_title = ""
@@ -275,16 +271,14 @@ class MBSCommonFunctions():
                 month=now.month,
                 day=now.day,
                 hour=period["parsed_start"].hour,
-                minute=period["parsed_start"].minute,
-                tzinfo=self.timezone
+                minute=period["parsed_start"].minute
             )
             end = datetime(
                 year=now.year,
                 month=now.month,
                 day=now.day,
                 hour=period["parsed_end"].hour,
-                minute=period["parsed_end"].minute,
-                tzinfo=self.timezone
+                minute=period["parsed_end"].minute
             )
             time_until_start = round((start - now).total_seconds())
             time_until_end = round((end - now).total_seconds())
@@ -307,8 +301,7 @@ class MBSCommonFunctions():
                 month=tomorrow.month,
                 day=tomorrow.day,
                 hour=list(self.current_schedule["schedule"].values())[0]["parsed_start"].hour,
-                minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute,
-                tzinfo=self.timezone
+                minute=list(self.current_schedule["schedule"].values())[0]["parsed_start"].minute
             )
             time_until_start = round((start - now).total_seconds())
             proposed_title = self.get_title("start", list(self.current_schedule["schedule"].keys())[0], time_until_start)
