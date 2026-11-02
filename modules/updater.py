@@ -140,7 +140,7 @@ class Updater():
         except requests.exceptions.ConnectionError:
             show_error(
                 title="Connection Error",
-                message="Couldn't connect to GitHub Releases."
+                message="Couldn't connect to the GitHub Releases API."
             )
 
     def update_schedules(self, show_success_alerts, headless):
