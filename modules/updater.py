@@ -70,7 +70,7 @@ def download_file(session, url):
             raise requests.exceptions.ConnectionError
         return file_request.content
     except requests.exceptions.ConnectionError:
-        return False
+        return None
 
 class Updater():
     def __init__(self, database: Database):
@@ -108,6 +108,12 @@ class Updater():
             for asset in releases[0]["assets"]:
                 if "MenuBarSchedule.app.zip" == asset["name"]:
                     app_darwin = download_file(session, asset["browser_download_url"])
+                    if app_darwin is None:
+                        show_error(
+                            title="Update Failed",
+                            message="Failed to install the update."
+                        )
+                        return
                     open("MenuBarSchedule.app.zip", "wb").write(app_darwin)
                     if Path("/Applications/MenuBarSchedule.app").exists():
                         shutil.rmtree("/Applications/MenuBarSchedule.app")
