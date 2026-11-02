@@ -243,7 +243,7 @@ class MBSCommonFunctions():
                     self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
 
             if day_is_over and not day_is_off:
-                now = datetime.now()
+                now = datetime.now(self.timezone)
                 start = datetime(
                     year=tomorrow.year,
                     month=tomorrow.month,
