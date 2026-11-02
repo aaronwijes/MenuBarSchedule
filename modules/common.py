@@ -158,6 +158,7 @@ class MBSCommonFunctions():
         pack_id = self.settings["selected_online_pack_id"]
         schedule_id = self.database.get_online_schedule_id(pack_id, title)
         self.current_schedule = self.database.get_schedule_from_os_pack(pack_id, schedule_id)
+        self.last_notified_period = None
         for key, value in {"selected_schedule": title, "selected_schedule_id": schedule_id}.items():
             self.settings[key] = value
             self.database.set_value(key, value)
