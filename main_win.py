@@ -37,10 +37,10 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="Check for Schedule Updates on Startup", action=self.toggle_settings, checked=lambda item: self.common.settings["check_schedule_updates_on_startup"]),
         )
 
-        self.menu = (
+        self.menu = Menu(
             Item(text="Change Schedule", action=Menu(self.generate_schedule_menu)),
             Item(text="Configure Schedule Packs", action=Menu(self.generate_pack_menu)),
-            Item(text="View Current Schedule", action=self.view_schedule),
+            Item(text="View Current Schedule", action=self.view_schedule, default=True),
             pystray.Menu.SEPARATOR,
             Item(text="Check for App Updates", action=self.check_updates),
             Item(text="Check for Schedule Updates", action=self.update_schedules),
