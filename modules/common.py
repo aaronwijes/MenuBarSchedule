@@ -208,6 +208,9 @@ class MBSCommonFunctions():
         use_calendar = self.settings["set_schedule_based_on_calendar"] and self.calendar != None
         if use_calendar:
             temp_schedule_id = self.get_daily_schedule(self.calendar, self.schedule_options, now)[0]
+            if temp_schedule_id == "":
+                proposed_title = "No Schedule"
+                return use_calendar, old_schedule_id, schedule_id, proposed_title, False
             temp_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], temp_schedule_id)
             last_period_end = datetime(
                 year=now.year,
@@ -237,7 +240,7 @@ class MBSCommonFunctions():
                     self.current_schedule = self.database.get_schedule_from_os_pack(self.calendar["pack_id"], schedule_id)
 
             if day_is_over and not day_is_off:
-                now = datetime.now()
+                now = datetime.now(self.timezone)
                 start = datetime(
                     year=tomorrow.year,
                     month=tomorrow.month,

@@ -51,15 +51,15 @@ class MenuBarSchedule(pystray.Icon):
             Item(text="Quit", action=self.stop)
         )
 
-        self.refresh_schedules()
         if self.common.check_updates_on_startup() == "quit":
             self.stop()
-        
-        self.timer = threading.Thread(target=self.update_time_loop, daemon=True)
-        self.timer.start()
 
         self.auto_update_timer = threading.Thread(target=self.auto_update_loop, daemon=True)
         self.auto_update_timer.start()
+
+        self.refresh_schedules()
+        self.timer = threading.Thread(target=self.update_time_loop, daemon=True)
+        self.timer.start()
 
     def show_info(self, title, message):
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()

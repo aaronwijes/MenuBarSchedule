@@ -160,73 +160,6 @@ class Database():
         cursor = self.conn.cursor()
         return len(cursor.execute("SELECT * FROM config WHERE key = ?;", [key]).fetchall()) > 0
 
-    def query_enabled_pack(self, pack_name):
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            SELECT * FROM config
-            WHERE key = "selected_online_pack"
-            AND value = ?;
-        """, [pack_name])
-        return len(cursor.fetchall()) > 0
-
-    # def add_online_schedule(self, pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order):
-    #     cursor = self.conn.cursor()
-    #     cursor.execute(f"""
-    #         INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order)
-    #         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    #         ON CONFLICT DO UPDATE SET
-    #             pack_id = excluded.pack_id,
-    #             schedule_id = excluded.schedule_id,
-    #             schedule_name = excluded.schedule_name,
-    #             period_id = excluded.period_id,
-    #             period_name = excluded.period_name,
-    #             start_time = excluded.start_time,
-    #             end_time = excluded.end_time,
-    #             insertion_order = excluded.insertion_order;
-    #     """, [pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order])
-    #     self.conn.commit()
-
-    # def add_online_calendar(self, calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date):
-    #     cursor = self.conn.cursor()
-    #     cursor.execute(f"""
-    #         INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date)
-    #         VALUES (?, ?, ?, ?, ?, ?, ?)
-    #         ON CONFLICT DO UPDATE SET
-    #             calendar_id = excluded.calendar_id,
-    #             calendar_name = excluded.calendar_name,
-    #             pack_id = excluded.pack_id,
-    #             schedule_name = excluded.schedule_name,
-    #             schedule_id = excluded.schedule_id,
-    #             is_default = excluded.is_default,
-    #             exception_date = excluded.exception_date;
-    #     """, [calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date])
-    #     self.conn.commit()
-
-    # def add_online_calendar_off_date(self, calendar_id, calendar_name, pack_id, off_day):
-    #     cursor = self.conn.cursor()
-    #     cursor.execute(f"""
-    #         INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day)
-    #         VALUES (?, ?, ?, ?)
-    #         ON CONFLICT DO UPDATE SET
-    #             calendar_id = excluded.calendar_id,
-    #             calendar_name = excluded.calendar_name,
-    #             pack_id = excluded.pack_id,
-    #             off_day = excluded.off_day;
-    #     """, [calendar_id, calendar_name, pack_id, off_day])
-    #     self.conn.commit()
-
-    # def add_online_schedule_pack(self, pack_id, pack_name, pack_version):
-    #     cursor = self.conn.cursor()
-    #     cursor.execute(f"""
-    #         INSERT INTO online_schedule_packs (pack_id, pack_name, pack_version)
-    #         VALUES (?, ?, ?)
-    #         ON CONFLICT DO UPDATE SET
-    #             pack_id = excluded.pack_id,
-    #             pack_name = excluded.pack_name,
-    #             pack_version = excluded.pack_version;
-    #     """, [pack_id, pack_name, pack_version])
-    #     self.conn.commit()
-
     def add_online_schedule_em(self, rows):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
@@ -243,7 +176,6 @@ class Database():
                 insertion_order = excluded.insertion_order,
                 schedule_format_version = excluded.schedule_format_version;
         """, rows)
-        self.conn.commit()
 
     def add_online_schedule_pack_em(self, rows):
         cursor = self.conn.cursor()
@@ -256,7 +188,6 @@ class Database():
                 pack_version = excluded.pack_version,
                 schedule_format_version = excluded.schedule_format_version;
         """, rows)
-        self.conn.commit()
 
     def add_online_calendar_em(self, rows):
         cursor = self.conn.cursor()
@@ -273,7 +204,6 @@ class Database():
                 exception_date = excluded.exception_date,
                 calendar_format_version = excluded.calendar_format_version;
         """, rows)
-        self.conn.commit()
 
     def add_online_calendar_off_date_em(self, rows):
         cursor = self.conn.cursor()
@@ -287,7 +217,6 @@ class Database():
                 off_day = excluded.off_day,
                 calendar_format_version = excluded.calendar_format_version;
         """, rows)
-        self.conn.commit()
 
     def remove_online_schedule_pack(self, pack_id):
         cursor = self.conn.cursor()
@@ -421,7 +350,6 @@ class Database():
         cursor.execute(f"""
             DELETE FROM online_schedule_packs;
         """)
-        self.conn.commit()
 
     def remove_all_online_calendars(self):
         cursor = self.conn.cursor()
@@ -431,7 +359,6 @@ class Database():
         cursor.execute(f"""
             DELETE FROM online_calendars_off_days;
         """)
-        self.conn.commit()
 
     def download_schedule_packs_from_sb(self):
         return (
@@ -462,49 +389,30 @@ class Database():
             .execute()
         )
 
+        continue_update = True
         if len(schedules.data) > 0:
-            if schedules.data[0]["schedule_format_version"] == 1:
-                self.remove_all_online_schedule_packs()
-                self.add_online_schedule_em(schedules.data)
-                self.add_online_schedule_pack_em(schedule_packs.data)
-            else:
-                return False
+            if schedules.data[0]["schedule_format_version"] != 1:
+                continue_update = False
+        else:
+            continue_update = False
 
         if len(schedule_calendars.data) > 0:
-            if schedule_calendars.data[0]["calendar_format_version"] == 1:
+            if schedule_calendars.data[0]["calendar_format_version"] != 1:
+                continue_update = False
+        else:
+            continue_update = False
+
+        if continue_update:
+            try:
+                self.remove_all_online_schedule_packs()
                 self.remove_all_online_calendars()
+                self.add_online_schedule_em(schedules.data)
+                self.add_online_schedule_pack_em(schedule_packs.data)
                 self.add_online_calendar_em(schedule_calendars.data)
                 self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
-            else:
-                return False
+                self.conn.commit()
+            except:
+                self.conn.rollback()
+                raise
 
-        return True
-
-    # def convert_schedule_jsons_to_sql(self):
-    #     schedule_path = Path(self.database_dir) / "schedules"
-    #     if schedule_path.exists():
-    #         metadata = Path(self.database_dir) / "schedules" / "metadata.json"
-    #         metadata_json = json.loads(metadata.read_text())
-    #         self.remove_all_online_calendars()
-    #         self.remove_all_online_schedule_packs()
-    #         for pack_id, pack_obj in metadata_json.items():
-    #             self.add_online_schedule_pack(pack_id, pack_obj["pack_name"], pack_obj["pack_version"])
-    #             schedule_json_path = Path(self.database_dir) / "schedules" / pack_id / "json"
-    #             calendar_path = schedule_json_path / ".." / "calendar.json"
-
-    #             for schedule_json in schedule_json_path.glob("*.json"):
-    #                 schedule = json.loads((schedule_json.read_text()))
-    #                 for i, (period_id, period) in enumerate(schedule["schedule"].items(), start=1):
-    #                     period["parsed_start"] = datetime.strptime(period["start"], "%I:%M %p")
-    #                     period["parsed_end"] = datetime.strptime(period["end"], "%I:%M %p")
-    #                     self.add_online_schedule(pack_id, Path(schedule_json).name.replace(".json", ""), schedule["name"], period_id, period["name"], period["start"], period["end"], i)
-
-    #             if calendar_path.exists():
-    #                 calendar = json.loads((calendar_path.read_text()))
-    #                 default_schedule_id = self.get_online_schedule_id(pack_id, calendar["default"])
-    #                 self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, calendar["default"], default_schedule_id, 1, "")
-    #                 for key, value in calendar["exceptions"].items():
-    #                     exception_schedule_id = self.get_online_schedule_id(pack_id, calendar["exceptions"][key])
-    #                     self.add_online_calendar("calendar", pack_obj["pack_name"], pack_id, value, exception_schedule_id, 0, key)
-    #                 for day_int in calendar["off_days"]:
-    #                     self.add_online_calendar_off_date("calendar", pack_obj["pack_name"], pack_id, day_int)
+        return continue_update
