@@ -59,19 +59,19 @@ class MenuBarSchedule(rumps.App):
         self.timer = rumps.Timer(self.update_time_left, interval=1.0)
         self.timer.start()
 
-    def select_option_schedule(self, sender):
+    def select_option_schedule(self, sender: rumps.MenuItem):
         old_schedule_id = self.common.select_schedule(sender.title)
         if old_schedule_id != "":
             self.schedule_items[old_schedule_id].state = False
         sender.state = True
 
-    def select_option_pack(self, sender):
+    def select_option_pack(self, sender: rumps.MenuItem):
         pack_id = self.common.select_pack(sender.title)
         if pack_id != "":
             self.pack_items[pack_id].state = False
         self.refresh_schedules(None)
 
-    def toggle_settings(self, sender):
+    def toggle_settings(self, sender: rumps.MenuItem):
         state = self.common.toggle_settings(sender.title)
         sender.state = state
 
@@ -82,7 +82,7 @@ class MenuBarSchedule(rumps.App):
         elif sender.title == "Auto-Update Schedules":
             self.toggle_auto_update_schedules_timer()
 
-    def update_time_left(self, sender):
+    def update_time_left(self, sender: rumps.MenuItem):
         use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off = self.common.update_time_left_calendar()
         if use_calendar and self.schedule_options != [] and old_schedule_id != schedule_id:
             if old_schedule_id != "":
@@ -106,7 +106,7 @@ class MenuBarSchedule(rumps.App):
         if self.title != proposed_title:
             self.title = proposed_title
 
-    def refresh_schedules(self, sender):
+    def refresh_schedules(self, sender: rumps.MenuItem):
         if not self.common.schedule_dir_exists():
             self.change_schedule.clear()
             self.change_schedule.add(rumps.MenuItem(title="No Schedules Found"))
@@ -157,12 +157,12 @@ class MenuBarSchedule(rumps.App):
         else:
             self.auto_update_timer.stop()
 
-    def auto_update_schedules(self, sender):
+    def auto_update_schedules(self, sender: rumps.MenuItem):
         if self.common.update_schedules(False, True):
             self.refresh_schedules(None)
 
     @rumps.clicked("View Current Schedule")
-    def view_schedule(self, sender):
+    def view_schedule(self, sender: rumps.MenuItem):
         title, message = self.common.view_schedule()
         rumps.alert(
             title=title,
@@ -170,17 +170,17 @@ class MenuBarSchedule(rumps.App):
         )
 
     @rumps.clicked("Check for App Updates")
-    def check_updates(self, sender):
+    def check_updates(self, sender: rumps.MenuItem):
         if self.common.update_app(True) == "restart":
             rumps.quit_application()
 
     @rumps.clicked("Check for Schedule Updates")
-    def update_schedules(self, sender):
+    def update_schedules(self, sender: rumps.MenuItem):
         if self.common.update_schedules(True, False):
             self.refresh_schedules(None)
 
     @rumps.clicked("About")
-    def about(self, sender):
+    def about(self, sender: rumps.MenuItem):
         title, message = self.common.about()
         rumps.alert(
             title=title,

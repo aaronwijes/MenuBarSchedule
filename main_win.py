@@ -61,10 +61,10 @@ class MenuBarSchedule(pystray.Icon):
         self.timer = threading.Thread(target=self.update_time_loop, daemon=True)
         self.timer.start()
 
-    def show_info(self, title, message):
+    def show_info(self, title: str, message: str):
         threading.Thread(target=ctypes.windll.user32.MessageBoxW, args=(0, message, title, 0x40)).start()
 
-    def create_image(self, text):
+    def create_image(self, text: str):
         image = Image.new('RGBA', (64, 64), (198, 169, 73))
         mask = Image.new("L", image.size, 0)
 
@@ -83,15 +83,15 @@ class MenuBarSchedule(pystray.Icon):
     def generate_pack_menu(self):
         return self.pack_items.values()
 
-    def select_option_schedule(self, icon, item):
+    def select_option_schedule(self, icon, item: pystray.MenuItem):
         if not self.common.settings["set_schedule_based_on_calendar"]:
             self.common.select_schedule(item.text)
 
-    def select_option_pack(self, icon, item):
+    def select_option_pack(self, icon, item: pystray.MenuItem):
         self.common.select_pack(item.text)
         self.refresh_schedules()
 
-    def toggle_settings(self, icon, item):
+    def toggle_settings(self, icon, item: pystray.MenuItem):
         self.common.toggle_settings(item.text)
 
         if item.text == "Set Schedule Based on Calendar":
@@ -174,7 +174,7 @@ class MenuBarSchedule(pystray.Icon):
 
         self.update_menu()
 
-    def view_schedule(self, sender):
+    def view_schedule(self, icon):
         title, message = self.common.view_schedule()
         self.show_info(
             title=title,
@@ -185,13 +185,13 @@ class MenuBarSchedule(pystray.Icon):
         if self.common.update_schedules(True, False):
             self.refresh_schedules()
 
-    def check_updates(self, sender):
+    def check_updates(self, icon):
         threading.Thread(target=self.common.update_app, args=(True,), daemon=True).start()
 
-    def update_schedules(self, sender):
+    def update_schedules(self, icon):
         threading.Thread(target=self.update_schedules_thread, daemon=True).start()
 
-    def about(self, sender):
+    def about(self, icon):
         title, message = self.common.about()
         self.show_info(
             title=title,
