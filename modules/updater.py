@@ -83,7 +83,13 @@ class Updater():
             if releases is None or len(releases) == 0:
                 raise requests.exceptions.ConnectionError
 
-            if not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
+            selected_release = {}
+            for release in releases:
+                if not release["prerelease"]:
+                    selected_release = release
+                    break
+
+            if not is_update([int(component) for component in selected_release["tag_name"].split(".")]):
                 if show_success_alerts:
                     show_info(
                         title="You're Up to Date",
@@ -93,7 +99,7 @@ class Updater():
 
             update = askokcancel(
                 title="Update Available",
-                message=f"You can update to version {releases[0]["tag_name"]}.\nInstall the update?",
+                message=f"You can update to version {selected_release["tag_name"]}.\nInstall the update?",
                 cancel=True,
                 ok="Update"
             )
@@ -102,10 +108,10 @@ class Updater():
 
             if OPSYS == "Windows":
                 import webbrowser
-                webbrowser.open(f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/releases/tag/{releases[0]["tag_name"]}")
+                webbrowser.open(f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/releases/tag/{selected_release["tag_name"]}")
                 return
 
-            for asset in releases[0]["assets"]:
+            for asset in selected_release["assets"]:
                 if "MenuBarSchedule.app.zip" == asset["name"]:
                     app_darwin = download_file(session, asset["browser_download_url"])
                     if app_darwin is None:
@@ -152,8 +158,14 @@ class Updater():
             if releases is None or len(releases) == 0:
                 raise requests.exceptions.ConnectionError
 
-            is_app_version_same = releases[0]["tag_name"] == VERSION
-            is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
+            selected_release = {}
+            for release in releases:
+                if not release["prerelease"]:
+                    selected_release = release
+                    break
+
+            is_app_version_same = selected_release["tag_name"] == VERSION
+            is_later_app_version = is_update([int(component) for component in selected_release["tag_name"].split(".")])
 
             saved_metadata_json = self.database.get_all_online_schedule_packs()
             current_metadata_json = self.database.download_schedule_packs_from_sb()
@@ -189,13 +201,13 @@ class Updater():
                 if not headless:
                     show_error(
                         title="Cannot Update Schedules",
-                        message=f"The latest version of Menu Bar Schedule ({releases[0]["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
+                        message=f"The latest version of Menu Bar Schedule ({selected_release["tag_name"]}) must be installed to continue receiving schedule updates.\nYou can update the app by clicking \"Check for App Updates\".",
                     )
                 return False
             elif is_schedule_update and not is_app_version_same and not is_later_app_version and not headless:
                 continue_update = askokcancel(
                     title="Schedule Updates Available",
-                    message=f"A schedule update is available, but it was made for an earlier version of Menu Bar Schedule ({releases[0]["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
+                    message=f"A schedule update is available, but it was made for an earlier version of Menu Bar Schedule ({selected_release["tag_name"]}).\nOlder schedules may not be compatible with this version of the app.\nInstall the update?",
                     cancel="Cancel",
                     ok="Update"
                 )
