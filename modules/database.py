@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import threading
 from datetime import datetime
 from pathlib import Path
 from platformdirs import user_config_dir
@@ -8,6 +9,8 @@ from .info import REPO_NAME, GITHUB_USERNAME
 
 class Database():
     def __init__(self):
+        self.lock = threading.RLock()
+
         self.database_dir = Path(user_config_dir(REPO_NAME, GITHUB_USERNAME))
         self.database_dir.mkdir(parents=True, exist_ok=True)
         self.database_path = f"{self.database_dir}/data.db"
@@ -139,226 +142,242 @@ class Database():
                 self.set_value(key, value)
 
     def fetch_value(self, key: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"SELECT value FROM config WHERE key = ?", [key])
-        value = cursor.fetchall()[0]["value"]
-        try:
-            return int(value)
-        except ValueError:
-            return value
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"SELECT value FROM config WHERE key = ?", [key])
+            value = cursor.fetchall()[0]["value"]
+            try:
+                return int(value)
+            except ValueError:
+                return value
 
     def set_value(self, key: str, value: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            INSERT INTO config (key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value;
-        """, [key, value])
-        self.conn.commit()
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                INSERT INTO config (key, value)
+                VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+            """, [key, value])
+            self.conn.commit()
 
     def key_exists(self, key: str):
-        cursor = self.conn.cursor()
-        return len(cursor.execute("SELECT * FROM config WHERE key = ?;", [key]).fetchall()) > 0
+        with self.lock:
+            cursor = self.conn.cursor()
+            return len(cursor.execute("SELECT * FROM config WHERE key = ?;", [key]).fetchall()) > 0
 
     def add_online_schedule_em(self, rows: list):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order, schedule_format_version)
-            VALUES (:pack_id, :schedule_id, :schedule_name, :period_id, :period_name, :start_time, :end_time, :insertion_order, :schedule_format_version)
-            ON CONFLICT DO UPDATE SET
-                pack_id = excluded.pack_id,
-                schedule_id = excluded.schedule_id,
-                schedule_name = excluded.schedule_name,
-                period_id = excluded.period_id,
-                period_name = excluded.period_name,
-                start_time = excluded.start_time,
-                end_time = excluded.end_time,
-                insertion_order = excluded.insertion_order,
-                schedule_format_version = excluded.schedule_format_version;
-        """, rows)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.executemany(f"""
+                INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order, schedule_format_version)
+                VALUES (:pack_id, :schedule_id, :schedule_name, :period_id, :period_name, :start_time, :end_time, :insertion_order, :schedule_format_version)
+                ON CONFLICT DO UPDATE SET
+                    pack_id = excluded.pack_id,
+                    schedule_id = excluded.schedule_id,
+                    schedule_name = excluded.schedule_name,
+                    period_id = excluded.period_id,
+                    period_name = excluded.period_name,
+                    start_time = excluded.start_time,
+                    end_time = excluded.end_time,
+                    insertion_order = excluded.insertion_order,
+                    schedule_format_version = excluded.schedule_format_version;
+            """, rows)
 
     def add_online_schedule_pack_em(self, rows: list):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_schedule_packs (pack_id, pack_name, pack_version)
-            VALUES (:pack_id, :pack_name, :pack_version)
-            ON CONFLICT DO UPDATE SET
-                pack_id = excluded.pack_id,
-                pack_name = excluded.pack_name,
-                pack_version = excluded.pack_version,
-                schedule_format_version = excluded.schedule_format_version;
-        """, rows)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.executemany(f"""
+                INSERT INTO online_schedule_packs (pack_id, pack_name, pack_version)
+                VALUES (:pack_id, :pack_name, :pack_version)
+                ON CONFLICT DO UPDATE SET
+                    pack_id = excluded.pack_id,
+                    pack_name = excluded.pack_name,
+                    pack_version = excluded.pack_version,
+                    schedule_format_version = excluded.schedule_format_version;
+            """, rows)
 
     def add_online_calendar_em(self, rows: list):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date, calendar_format_version)
-            VALUES (:calendar_id, :calendar_name, :pack_id, :schedule_name, :schedule_id, :is_default, :exception_date, :calendar_format_version)
-            ON CONFLICT DO UPDATE SET
-                calendar_id = excluded.calendar_id,
-                calendar_name = excluded.calendar_name,
-                pack_id = excluded.pack_id,
-                schedule_name = excluded.schedule_name,
-                schedule_id = excluded.schedule_id,
-                is_default = excluded.is_default,
-                exception_date = excluded.exception_date,
-                calendar_format_version = excluded.calendar_format_version;
-        """, rows)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.executemany(f"""
+                INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date, calendar_format_version)
+                VALUES (:calendar_id, :calendar_name, :pack_id, :schedule_name, :schedule_id, :is_default, :exception_date, :calendar_format_version)
+                ON CONFLICT DO UPDATE SET
+                    calendar_id = excluded.calendar_id,
+                    calendar_name = excluded.calendar_name,
+                    pack_id = excluded.pack_id,
+                    schedule_name = excluded.schedule_name,
+                    schedule_id = excluded.schedule_id,
+                    is_default = excluded.is_default,
+                    exception_date = excluded.exception_date,
+                    calendar_format_version = excluded.calendar_format_version;
+            """, rows)
 
     def add_online_calendar_off_date_em(self, rows: list):
-        cursor = self.conn.cursor()
-        cursor.executemany(f"""
-            INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day, calendar_format_version)
-            VALUES (:calendar_id, :calendar_name, :pack_id, :off_day, :calendar_format_version)
-            ON CONFLICT DO UPDATE SET
-                calendar_id = excluded.calendar_id,
-                calendar_name = excluded.calendar_name,
-                pack_id = excluded.pack_id,
-                off_day = excluded.off_day,
-                calendar_format_version = excluded.calendar_format_version;
-        """, rows)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.executemany(f"""
+                INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day, calendar_format_version)
+                VALUES (:calendar_id, :calendar_name, :pack_id, :off_day, :calendar_format_version)
+                ON CONFLICT DO UPDATE SET
+                    calendar_id = excluded.calendar_id,
+                    calendar_name = excluded.calendar_name,
+                    pack_id = excluded.pack_id,
+                    off_day = excluded.off_day,
+                    calendar_format_version = excluded.calendar_format_version;
+            """, rows)
 
     def remove_online_schedule_pack(self, pack_id: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            DELETE FROM online_schedules
-            WHERE pack_id = ?;
-        """, [pack_id])
-        cursor.execute(f"""
-            DELETE FROM online_schedule_packs
-            WHERE pack_id = ?;
-        """, [pack_id])
-        self.conn.commit()
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                DELETE FROM online_schedules
+                WHERE pack_id = ?;
+            """, [pack_id])
+            cursor.execute(f"""
+                DELETE FROM online_schedule_packs
+                WHERE pack_id = ?;
+            """, [pack_id])
+            self.conn.commit()
 
     def get_online_pack_id(self, pack_name: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            SELECT pack_id FROM online_schedule_packs
-            WHERE pack_name = ?;
-        """, [pack_name])
-        rows = cursor.fetchall()
-        if len(rows) == 0:
-            return ""
-        return rows[0]["pack_id"]
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                SELECT pack_id FROM online_schedule_packs
+                WHERE pack_name = ?;
+            """, [pack_name])
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                return ""
+            return rows[0]["pack_id"]
 
     def get_online_schedule_id(self, pack_id: str, schedule_name: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            SELECT schedule_id FROM online_schedules
-            WHERE pack_id = ?
-            AND schedule_name = ?;
-        """, [pack_id, schedule_name])
-        rows = cursor.fetchall()
-        if len(rows) == 0:
-            return ""
-        return rows[0]["schedule_id"]
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                SELECT schedule_id FROM online_schedules
+                WHERE pack_id = ?
+                AND schedule_name = ?;
+            """, [pack_id, schedule_name])
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                return ""
+            return rows[0]["schedule_id"]
 
     def get_schedule_from_os_pack(self, pack_id: str, schedule_id: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            SELECT * FROM online_schedules
-            WHERE pack_id = ?
-            AND schedule_id = ?
-            ORDER BY insertion_order ASC;
-        """, [pack_id, schedule_id])
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                SELECT * FROM online_schedules
+                WHERE pack_id = ?
+                AND schedule_id = ?
+                ORDER BY insertion_order ASC;
+            """, [pack_id, schedule_id])
 
-        periods = cursor.fetchall()
-        schedule = {"name": periods[0]["schedule_name"], "schedule_id": periods[0]["schedule_id"], "pack_id": periods[0]["pack_id"], "schedule": {}}
-        for period in periods:
-            schedule["schedule"][period[3]] = {
-                "start": period["start_time"],
-                "end": period["end_time"],
-                "parsed_start": datetime.strptime(period["start_time"], "%I:%M %p"),
-                "parsed_end": datetime.strptime(period["end_time"], "%I:%M %p"),
-                "name": period["period_name"]
-            }
+            periods = cursor.fetchall()
+            schedule = {"name": periods[0]["schedule_name"], "schedule_id": periods[0]["schedule_id"], "pack_id": periods[0]["pack_id"], "schedule": {}}
+            for period in periods:
+                schedule["schedule"][period[3]] = {
+                    "start": period["start_time"],
+                    "end": period["end_time"],
+                    "parsed_start": datetime.strptime(period["start_time"], "%I:%M %p"),
+                    "parsed_end": datetime.strptime(period["end_time"], "%I:%M %p"),
+                    "name": period["period_name"]
+                }
 
-        return schedule
+            return schedule
 
     def get_all_online_schedule_packs(self):
-        cursor = self.conn.cursor()
-        cursor.execute(f"SELECT * FROM online_schedule_packs;")
-        rows = cursor.fetchall()
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"SELECT * FROM online_schedule_packs;")
+            rows = cursor.fetchall()
 
-        packs = {}
-        for row in rows:
-            packs[row["pack_id"]] = {
-                "pack_name": row["pack_name"],
-                "pack_version": row["pack_version"]
-            }
+            packs = {}
+            for row in rows:
+                packs[row["pack_id"]] = {
+                    "pack_name": row["pack_name"],
+                    "pack_version": row["pack_version"]
+                }
 
-        return packs
+            return packs
 
     def get_all_online_schedules(self):
-        pack_id = self.get_online_pack_id(self.fetch_value("selected_online_pack"))
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            SELECT schedule_id, schedule_name
-            FROM online_schedules
-            WHERE pack_id = ?
-            ORDER BY schedule_name COLLATE NOCASE;
-        """, [pack_id])
-        rows = cursor.fetchall()
+        with self.lock:
+            pack_id = self.get_online_pack_id(self.fetch_value("selected_online_pack"))
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                SELECT schedule_id, schedule_name
+                FROM online_schedules
+                WHERE pack_id = ?
+                ORDER BY schedule_name COLLATE NOCASE;
+            """, [pack_id])
+            rows = cursor.fetchall()
 
-        schedules = {}
-        for row in rows:
-            if row["schedule_id"] not in schedules:
-                schedules[row["schedule_id"]] = row["schedule_name"]
+            schedules = {}
+            for row in rows:
+                if row["schedule_id"] not in schedules:
+                    schedules[row["schedule_id"]] = row["schedule_name"]
 
-        return schedules
+            return schedules
 
     def get_calendar(self, pack_id: str):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            SELECT * FROM online_calendars
-            WHERE pack_id = ?
-            AND calendar_id = "calendar";
-        """, [pack_id])
-        rows = cursor.fetchall()
-        if len(rows) == 0:
-            return {}
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                SELECT * FROM online_calendars
+                WHERE pack_id = ?
+                AND calendar_id = "calendar";
+            """, [pack_id])
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                return {}
 
-        calendar = {"pack_id": pack_id, "exceptions": {}, "off_days": []}
-        for row in rows:
-            if row["is_default"] == True:
-                calendar["default"] = {
-                    "name": row["schedule_name"],
-                    "id": row["schedule_id"]
-                }
-            else:
-                calendar["exceptions"][row["exception_date"]] = {
-                    "name": row["schedule_name"],
-                    "id": row["schedule_id"]
-                }
+            calendar = {"pack_id": pack_id, "exceptions": {}, "off_days": []}
+            for row in rows:
+                if row["is_default"] == True:
+                    calendar["default"] = {
+                        "name": row["schedule_name"],
+                        "id": row["schedule_id"]
+                    }
+                else:
+                    calendar["exceptions"][row["exception_date"]] = {
+                        "name": row["schedule_name"],
+                        "id": row["schedule_id"]
+                    }
 
-        cursor.execute(f"""
-            SELECT * FROM online_calendars_off_days
-            WHERE pack_id = ?
-            AND calendar_id = "calendar";
-        """, [pack_id])
-        rows = cursor.fetchall()
-        for row in rows:
-            calendar["off_days"].append(row["off_day"])
+            cursor.execute(f"""
+                SELECT * FROM online_calendars_off_days
+                WHERE pack_id = ?
+                AND calendar_id = "calendar";
+            """, [pack_id])
+            rows = cursor.fetchall()
+            for row in rows:
+                calendar["off_days"].append(row["off_day"])
 
-        return calendar
+            return calendar
 
     def remove_all_online_schedule_packs(self):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            DELETE FROM online_schedules;
-        """)
-        cursor.execute(f"""
-            DELETE FROM online_schedule_packs;
-        """)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                DELETE FROM online_schedules;
+            """)
+            cursor.execute(f"""
+                DELETE FROM online_schedule_packs;
+            """)
 
     def remove_all_online_calendars(self):
-        cursor = self.conn.cursor()
-        cursor.execute(f"""
-            DELETE FROM online_calendars;
-        """)
-        cursor.execute(f"""
-            DELETE FROM online_calendars_off_days;
-        """)
+        with self.lock:
+            cursor = self.conn.cursor()
+            cursor.execute(f"""
+                DELETE FROM online_calendars;
+            """)
+            cursor.execute(f"""
+                DELETE FROM online_calendars_off_days;
+            """)
 
     def download_schedule_packs_from_sb(self):
         return (
@@ -403,16 +422,17 @@ class Database():
             continue_update = False
 
         if continue_update:
-            try:
-                self.remove_all_online_schedule_packs()
-                self.remove_all_online_calendars()
-                self.add_online_schedule_em(schedules.data)
-                self.add_online_schedule_pack_em(schedule_packs.data)
-                self.add_online_calendar_em(schedule_calendars.data)
-                self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
-                self.conn.commit()
-            except:
-                self.conn.rollback()
-                raise
+            with self.lock:
+                try:
+                    self.remove_all_online_schedule_packs()
+                    self.remove_all_online_calendars()
+                    self.add_online_schedule_em(schedules.data)
+                    self.add_online_schedule_pack_em(schedule_packs.data)
+                    self.add_online_calendar_em(schedule_calendars.data)
+                    self.add_online_calendar_off_date_em(schedule_calendars_off_days.data)
+                    self.conn.commit()
+                except Exception:
+                    self.conn.rollback()
+                    raise
 
         return continue_update
