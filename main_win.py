@@ -19,6 +19,8 @@ class MenuBarSchedule(pystray.Icon):
         self.common = common
         self.font_path = font_path
         self.font = ImageFont.truetype(self.font_path, size=24)
+        self.font_large = ImageFont.truetype(self.font_path, size=30)
+        self.font_xlarge = ImageFont.truetype(self.font_path, size=36)
         self.icon = self.create_image("MBS")
 
         self.is_running = True
@@ -69,7 +71,12 @@ class MenuBarSchedule(pystray.Icon):
         mask = Image.new("L", image.size, 0)
 
         dc = ImageDraw.Draw(image)
-        dc.text((5, 5), text, fill=(0, 0, 0, 255), font=self.font)
+        if len(text) < 3:
+            dc.text((5, 12), text, fill=(0, 0, 0, 255), font=self.font_xlarge)
+        elif not "\n" in text:
+            dc.text((3, 14), text, fill=(0, 0, 0, 255), font=self.font_large)
+        else:
+            dc.text((5, 5), text, fill=(0, 0, 0, 255), font=self.font)
 
         draw = ImageDraw.Draw(mask)
         draw.rounded_rectangle([(0, 0), image.size], radius=15, fill=255)
