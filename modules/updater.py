@@ -13,7 +13,7 @@ if OPSYS == "Darwin":
 else:
     import ctypes
 
-def show_info(title, message):
+def show_info(title: str, message: str):
     if OPSYS == "Darwin":
         rumps.alert(
             title=title,
@@ -22,7 +22,7 @@ def show_info(title, message):
     else:
         ctypes.windll.user32.MessageBoxW(0, message, title, 0x40)
 
-def show_error(title, message):
+def show_error(title: str, message: str):
     if OPSYS == "Darwin":
         rumps.alert(
             title=title,
@@ -31,7 +31,7 @@ def show_error(title, message):
     else:
         ctypes.windll.user32.MessageBoxW(0, message, title, 0x10)
 
-def askokcancel(title, message, ok="OK", cancel="Cancel"):
+def askokcancel(title: str, message: str, ok: str="OK", cancel: str="Cancel"):
     if OPSYS == "Darwin":
         return rumps.alert(
             title=title,
@@ -42,7 +42,7 @@ def askokcancel(title, message, ok="OK", cancel="Cancel"):
     else:
         return ctypes.windll.user32.MessageBoxW(0, message, title, 0x04) == 6
 
-def is_update(new_version_list):
+def is_update(new_version_list: list[int]):
     if new_version_list[0] > VERSION_LIST[0]:
         return True
     elif new_version_list[0] == VERSION_LIST[0]:
@@ -53,7 +53,7 @@ def is_update(new_version_list):
                 return True
     return False
 
-def get_releases(session):
+def get_releases(session: requests.Session):
     releases_req = session.get(f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/releases")
     if not releases_req.ok:
         show_error(
@@ -63,7 +63,7 @@ def get_releases(session):
         return
     return releases_req.json()
 
-def download_file(session, url):
+def download_file(session: requests.Session, url: str):
     try:
         file_request = session.get(url)
         if not file_request.ok:
@@ -76,12 +76,12 @@ class Updater():
     def __init__(self, database: Database):
         self.database = database
 
-    def update_app_macos(self, show_success_alerts):
+    def update_app_macos(self, show_success_alerts: bool):
         try:
             session = requests.Session()
             releases = get_releases(session)
-            if releases is None:
-                return
+            if releases is None or len(releases) == 0:
+                raise requests.exceptions.ConnectionError
 
             if not is_update([int(component) for component in releases[0]["tag_name"].split(".")]):
                 if show_success_alerts:
@@ -143,11 +143,14 @@ class Updater():
                 message="Couldn't connect to the GitHub Releases API."
             )
 
-    def update_schedules(self, show_success_alerts, headless):
+    def update_schedules(self, show_success_alerts: bool, headless: bool):
         try:
             session = requests.Session()
             releases = get_releases(session)
             force_install = False
+
+            if releases is None or len(releases) == 0:
+                raise requests.exceptions.ConnectionError
 
             is_app_version_same = releases[0]["tag_name"] == VERSION
             is_later_app_version = is_update([int(component) for component in releases[0]["tag_name"].split(".")])
@@ -233,7 +236,7 @@ class Updater():
             if not headless:
                 show_error(
                     title="Connection Error",
-                    message="Couldn't connect to Supabase."
+                    message="Couldn't connect to the GitHub Releases API or Supabase."
                 )
             return False
         except ValueError:

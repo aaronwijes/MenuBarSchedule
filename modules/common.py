@@ -129,7 +129,7 @@ class MBSCommonFunctions():
                 self.database.set_value(key, "")
             return {}, "", False
 
-    def get_title(self, timeframe, period, seconds):
+    def get_title(self, timeframe: str, period: str, seconds: int):
         use_shorthand = self.settings["use_shorthand"]
         hide_seconds = self.settings["hide_seconds"]
 
@@ -147,7 +147,7 @@ class MBSCommonFunctions():
 
         return title
 
-    def get_daily_schedule(self, calendar, schedule_options, now):
+    def get_daily_schedule(self, calendar: dict, schedule_options: dict, now: datetime):
         date = f"{now.month}/{now.day}/{now.year}"
         schedule = calendar["exceptions"].get(date, calendar["default"])
 
@@ -156,7 +156,7 @@ class MBSCommonFunctions():
 
         return "", ""
 
-    def select_schedule(self, title):
+    def select_schedule(self, title: str):
         old_schedule_id = ""
         if self.settings["selected_schedule_id"] != "":
             old_schedule_id = self.settings["selected_schedule_id"]
@@ -170,7 +170,7 @@ class MBSCommonFunctions():
         
         return old_schedule_id
 
-    def select_pack(self, title):
+    def select_pack(self, title: str):
         old_pack_id = ""
         selected_online_pack = self.settings["selected_online_pack"]
         if selected_online_pack == title:
@@ -188,7 +188,7 @@ class MBSCommonFunctions():
 
         return old_pack_id
 
-    def toggle_settings(self, title):
+    def toggle_settings(self, title: str):
         if title in self.cfg_lookup:
             config_key = self.cfg_lookup[title]
             self.settings[config_key] = not self.settings[config_key]
@@ -257,7 +257,7 @@ class MBSCommonFunctions():
 
         return use_calendar, old_schedule_id, schedule_id, proposed_title, day_is_off
 
-    def update_time_left(self, day_is_off):
+    def update_time_left(self, day_is_off: bool):
         now = datetime.now(self.timezone)
         tomorrow = now.date() + timedelta(days=1)
 
@@ -338,10 +338,10 @@ class MBSCommonFunctions():
         if self.settings["check_schedule_updates_on_startup"]:
             self.update_schedules(False, False)
 
-    def update_app(self, show_success_alerts):
+    def update_app(self, show_success_alerts: bool):
         return self.updater.update_app_macos(show_success_alerts)
 
-    def update_schedules(self, show_success_alerts, headless):
+    def update_schedules(self, show_success_alerts: bool, headless: bool):
         return self.updater.update_schedules(show_success_alerts, headless)
 
     def toggle_login_item(self):

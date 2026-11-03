@@ -138,7 +138,7 @@ class Database():
             if not self.key_exists(key):
                 self.set_value(key, value)
 
-    def fetch_value(self, key):
+    def fetch_value(self, key: str):
         cursor = self.conn.cursor()
         cursor.execute(f"SELECT value FROM config WHERE key = ?", [key])
         value = cursor.fetchall()[0]["value"]
@@ -147,7 +147,7 @@ class Database():
         except ValueError:
             return value
 
-    def set_value(self, key, value):
+    def set_value(self, key: str, value: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             INSERT INTO config (key, value)
@@ -156,11 +156,11 @@ class Database():
         """, [key, value])
         self.conn.commit()
 
-    def key_exists(self, key):
+    def key_exists(self, key: str):
         cursor = self.conn.cursor()
         return len(cursor.execute("SELECT * FROM config WHERE key = ?;", [key]).fetchall()) > 0
 
-    def add_online_schedule_em(self, rows):
+    def add_online_schedule_em(self, rows: list):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
             INSERT INTO online_schedules (pack_id, schedule_id, schedule_name, period_id, period_name, start_time, end_time, insertion_order, schedule_format_version)
@@ -177,7 +177,7 @@ class Database():
                 schedule_format_version = excluded.schedule_format_version;
         """, rows)
 
-    def add_online_schedule_pack_em(self, rows):
+    def add_online_schedule_pack_em(self, rows: list):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
             INSERT INTO online_schedule_packs (pack_id, pack_name, pack_version)
@@ -189,7 +189,7 @@ class Database():
                 schedule_format_version = excluded.schedule_format_version;
         """, rows)
 
-    def add_online_calendar_em(self, rows):
+    def add_online_calendar_em(self, rows: list):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
             INSERT INTO online_calendars (calendar_id, calendar_name, pack_id, schedule_name, schedule_id, is_default, exception_date, calendar_format_version)
@@ -205,7 +205,7 @@ class Database():
                 calendar_format_version = excluded.calendar_format_version;
         """, rows)
 
-    def add_online_calendar_off_date_em(self, rows):
+    def add_online_calendar_off_date_em(self, rows: list):
         cursor = self.conn.cursor()
         cursor.executemany(f"""
             INSERT INTO online_calendars_off_days (calendar_id, calendar_name, pack_id, off_day, calendar_format_version)
@@ -218,7 +218,7 @@ class Database():
                 calendar_format_version = excluded.calendar_format_version;
         """, rows)
 
-    def remove_online_schedule_pack(self, pack_id):
+    def remove_online_schedule_pack(self, pack_id: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             DELETE FROM online_schedules
@@ -230,7 +230,7 @@ class Database():
         """, [pack_id])
         self.conn.commit()
 
-    def get_online_pack_id(self, pack_name):
+    def get_online_pack_id(self, pack_name: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT pack_id FROM online_schedule_packs
@@ -241,7 +241,7 @@ class Database():
             return ""
         return rows[0]["pack_id"]
 
-    def get_online_schedule_id(self, pack_id, schedule_name):
+    def get_online_schedule_id(self, pack_id: str, schedule_name: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT schedule_id FROM online_schedules
@@ -253,7 +253,7 @@ class Database():
             return ""
         return rows[0]["schedule_id"]
 
-    def get_schedule_from_os_pack(self, pack_id, schedule_id):
+    def get_schedule_from_os_pack(self, pack_id: str, schedule_id: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT * FROM online_schedules
@@ -307,7 +307,7 @@ class Database():
 
         return schedules
 
-    def get_calendar(self, pack_id):
+    def get_calendar(self, pack_id: str):
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT * FROM online_calendars
