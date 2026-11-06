@@ -10,7 +10,7 @@ Menu Bar Schedule shows how much time is left until your next class or event sta
 
 ## How to Use
 **Install the app:**
-* Windows: Download and extract `MenuBarSchedule.zip` to any folder before running the app.
+* Windows: Download and run `MenuBarSchedule-Setup-X.Y.Z.exe`.
 * macOS: Download and extract `MenuBarSchedule.app.zip` and drag the .app file into the Applications folder. (If Gatekeeper blocks the app from running, go to *Settings > Privacy and Security > click Open Anyway*.)
 
 **Regardless of your operating system:**
@@ -29,13 +29,12 @@ Menu Bar Schedule shows how much time is left until your next class or event sta
 **Automatic schedule setting** - This sets the schedule automatically depending on the date. To enable/disable this feature, go to *Settings* > click *Set Schedule Based on Calendar*. Subject to the currently selected school’s support for a school calendar.
 
 ## Updates
-On macOS, you can check for and install app updates by clicking *Check for App Updates*. This option exists on Windows, but does nothing when clicked. You must download app updates manually on Windows.
+On macOS, you can check for and install app updates by clicking *Check for App Updates*.<br>
+On Windows, you can check for app updates by clicking *Check for App Updates*. However, you must download the setup EXE manually.
 
-On both macOS and Windows, you can check for and install schedule updates by clicking *Check for Schedule Updates*. Make sure to check for schedule updates at least once a week!
+On both macOS and Windows, you can check for and install schedule updates by clicking *Check for Schedule Updates*.
+You can optionally enable the *Auto-Update Schedules* setting to automatically update your schedules.
 
 ## Building From Source
 Install Python 3.15.x and install all of the modules in requirements.txt.<br>
 Then, build the app using PyInstaller: `pyinstaller ./resources/macos.spec` or `pyinstaller ./resources/win.spec`
-
-To test your own schedule packs, make your changes and move the `/schedules` directory to `~/Library/Application Support/MenuBarSchedule/schedules` or `%LOCALAPPDATA%\aaronwijes\MenuBarSchedule\schedules` depending on your operating system.<br>
-You can reload schedule packs by clicking *Settings > Refresh Schedules from JSON*.
