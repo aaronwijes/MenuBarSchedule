@@ -125,7 +125,7 @@ class MenuBarSchedule(rumps.App):
 
             if selected_pack_id != "":
                 self.pack_items[selected_pack_id].state = True
-            
+
             self.change_schedule_pack.clear()
             for item in self.pack_items.values():
                 self.change_schedule_pack.add(item)
